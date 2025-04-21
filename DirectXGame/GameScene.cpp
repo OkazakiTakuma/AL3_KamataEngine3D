@@ -2,8 +2,10 @@
 using namespace KamataEngine;
 
 void GameScene::Initialize() {
+	// カメラの初期化
+	camera_.Initialize();
 #pragma region 自キャラの初期化
-	playerTecstureHandle_ = TextureManager::Load("mario.jpg");
+	playerTecstureHandle_ = TextureManager::Load("uvChecker.png");
 	playerSprite_ = Sprite::Create(playerTecstureHandle_, {100, 50});
 	// 3Dモデルの作成
 	playerModel_ = Model::Create();
@@ -13,11 +15,10 @@ void GameScene::Initialize() {
 	// 自キャラの生成
 	player_ = new Player();
 	// 自キャラの初期化
-	player_->Initialize();
+	player_->Initialize(playerModel_,playerTecstureHandle_,&camera_);
 
 #pragma endregion
-	// カメラの初期化
-	camera_.Initialize();
+	
 }
 
 GameScene::~GameScene() {
@@ -31,6 +32,10 @@ void GameScene::Update() {
 }
 
 void GameScene::Draw() {
+	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
+	// 3Dモデルの描画
+	Model::PreDraw(dxCommon->GetCommandList());
 	// 自キャラの描画
 	player_->Draw();
+	Model::PostDraw();
 }
