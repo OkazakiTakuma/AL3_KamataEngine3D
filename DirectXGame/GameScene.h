@@ -1,5 +1,7 @@
 #pragma once
 #include "KamataEngine.h"
+#include "Matrix.h"
+#include <vector>
 
 class GameScene {
 public:
@@ -19,13 +21,12 @@ private:
 	KamataEngine::WorldTransform worldTransform_;
 	// カメラ
 	KamataEngine::Camera camera_;
-	// Imguiで値を入力する変数　
-	float inputFloat3[3] = {0, 0, 0};
 	// デバッグカメラ
 	KamataEngine::DebugCamera* debugCamera_ = nullptr;
 
-	// サウンドデータハンドル
-	uint32_t soundDataHandle_ = 0;
-	// 音楽再生ハンドル
-	uint32_t voiceHandle_ = 0;
+	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
+
+	Vector3Matrix scale_;
+	Vector3Matrix rotate_;
+	Vector3Matrix translate_;
 };

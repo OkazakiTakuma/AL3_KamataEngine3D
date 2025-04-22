@@ -20,11 +20,39 @@ void GameScene::Initialize() {
 	AxisIndicator::GetInstance()->SetTargetCamera(&debugCamera_->GetCamera());
 #pragma endregion
 
-#pragma region 音声生成
-	// サウンドデータの生成
-	soundDataHandle_ = Audio::GetInstance()->LoadWave("BGM.wav");
-	// 音声再生
-	voiceHandle_ = Audio::GetInstance()->PlayWave(soundDataHandle_, true);
+#pragma region ブロック配置の初期化
+	// 要素数
+	const uint32_t kNumBlockVertical = 10;
+	const uint32_t kNumBlockHorizontal = 20;
+	// 横幅
+	const float kBlockWidth = 2.0f;
+	const float kBlockHeight = 2.0f;
+
+	// 要素数の変更
+	worldTransformBlocks_.resize(kNumBlockVertical);
+
+	for (uint32_t i = 0; i < kNumBlockVertical; ++i) {
+		worldTransformBlocks_[i].resize(kNumBlockHorizontal);
+	}
+	// 生成
+	for (uint32_t i = 0; i < kNumBlockVertical; i++) {
+		for (uint32_t j = 0; j < kNumBlockHorizontal; j++) {
+			if (i % 2 == 0 || j % 2 == 0) {
+				// ワールドトランスフォームの生成
+				worldTransformBlocks_[i][j] = new WorldTransform();
+				worldTransformBlocks_[i][j]->Initialize();
+				worldTransformBlocks_[i][j]->translation_.x = kBlockWidth * j;
+				worldTransformBlocks_[i][j]->translation_.y = kBlockHeight * i;
+				if (i % 2 == 0 && j % 2 == 0) {
+					// ワールドトランスフォームの生成
+					worldTransformBlocks_[i][j] = nullptr;
+				}
+			}
+		}
+	}
+	scale_ = {0};
+	rotate_ = {0};
+	translate_ = {0};
 #pragma endregion
 }
 
@@ -32,33 +60,49 @@ GameScene::~GameScene() {
 	delete sprite_;
 	delete model_;
 	delete debugCamera_;
+	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
+		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
+			delete worldTransformBlock;
+		}
+	}
+	worldTransformBlocks_.clear();
 }
 
 void GameScene::Update() {
-	Vector2 postion = sprite_->GetPosition();
-	postion.x += 2.0f;
-	postion.y += 2.0f;
-	sprite_->SetPosition(postion);
-
-#pragma region 音声
-	// スペースキーを押した瞬間
-	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
-		// 音声停止
-		Audio::GetInstance()->StopWave(voiceHandle_);
+#pragma region ブロック配置の更新
+	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
+		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
+			if (!worldTransformBlock) {
+				continue;
+			}
+			// ワールドトランスフォームの更新
+			// scaleの変換
+			scale_.x = static_cast<float>(worldTransformBlock->scale_.x);
+			scale_.y = static_cast<float>(worldTransformBlock->scale_.y);
+			scale_.z = static_cast<float>(worldTransformBlock->scale_.z);
+			// rotateの変換
+			rotate_.x = static_cast<float>(worldTransformBlock->rotation_.x);
+			rotate_.y = static_cast<float>(worldTransformBlock->rotation_.y);
+			rotate_.z = static_cast<float>(worldTransformBlock->rotation_.z);
+			// translateの変換
+			translate_.x = static_cast<float>(worldTransformBlock->translation_.x);
+			translate_.y = static_cast<float>(worldTransformBlock->translation_.y);
+			translate_.z = static_cast<float>(worldTransformBlock->translation_.z);
+			// アフィン変換
+			Matrix4x4Afifne affine = MakeAffineMatrix(scale_, rotate_, translate_);
+			for (int i = 0; i < 4; i++) {
+				for (int j = 0; j < 4; j++) {
+					// ワールドトランスフォームの行列にアフィン変換を適用
+					worldTransformBlock->matWorld_.m[j][i] = affine.m[j][i];
+				}
+			}
+			// ワールドトランスフォームの転送
+			worldTransformBlock->TransferMatrix();
+		}
 	}
 #pragma endregion
 
 #ifdef _DEBUG
-	// デバッグテキストの表示
-	ImGui::Text("Okazaki Takuma %d.%d.%d", 2050, 12, 31);
-	ImGui::Begin("Debug1");
-	// float3入力ボックス
-	ImGui::InputFloat3("Inputfloat3", inputFloat3);
-	// float3スライダー
-	ImGui::SliderFloat3("SliderFloat3", inputFloat3, 0.0f, 1.0f);
-	ImGui::End();
-	// デモウィンドウの表示の有効化
-	ImGui::ShowDemoWindow();
 	// デバッグカメラの更新
 	debugCamera_->Update();
 
@@ -68,13 +112,17 @@ void GameScene::Update() {
 void GameScene::Draw() {
 
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
-	// スプライトの描画
-	Sprite::PreDraw(dxCommon->GetCommandList());
-	sprite_->Draw();
-	Sprite::PostDraw();
+
 	// 3Dモデルの描画
 	Model::PreDraw(dxCommon->GetCommandList());
-	model_->Draw(worldTransform_, debugCamera_->GetCamera(), tecstureHandle_);
+	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
+		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
+			if (!worldTransformBlock) {
+				continue;
+			}
+			model_->Draw(*worldTransformBlock, debugCamera_->GetCamera());
+		}
+	}
 #ifdef _DEBUG
 	PrimitiveDrawer::GetInstance()->DrawLine3d({0, 0, 0}, {10, 0, 10}, {1.0f, 0.0f, 0.0f, 1.0f});
 #endif
