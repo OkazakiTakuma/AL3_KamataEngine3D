@@ -18,6 +18,10 @@ void GameScene::Initialize() {
 	AxisIndicator::GetInstance()->SetVisible(true);
 	// 軸方向表示が参照するビュープロジェクション
 	AxisIndicator::GetInstance()->SetTargetCamera(&debugCamera_->GetCamera());
+
+	// スカイドームの生成
+	skydome_ = new Skydome();
+	skydome_->Initialize(&debugCamera_->GetCamera());
 #pragma endregion
 
 #pragma region ブロック配置の初期化
@@ -59,6 +63,7 @@ void GameScene::Initialize() {
 GameScene::~GameScene() {
 	delete sprite_;
 	delete model_;
+	delete skydome_;
 	delete debugCamera_;
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -115,6 +120,9 @@ void GameScene::Draw() {
 
 	// 3Dモデルの描画
 	Model::PreDraw(dxCommon->GetCommandList());
+	// スカイドームの描画
+	skydome_->Draw();
+	// スプライトの描画
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
 			if (!worldTransformBlock) {
