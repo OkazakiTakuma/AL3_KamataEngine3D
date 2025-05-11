@@ -22,42 +22,14 @@ void GameScene::Initialize() {
 	// スカイドームの生成
 	skydome_ = new Skydome();
 	skydome_->Initialize(&debugCamera_->GetCamera());
+	// マップチップフィールドの生成
+	mapChipField_ = new MapChipFIeld;
+	// マップチップデータの読み込み
+	mapChipField_->LoadMapChipCsv("Resources/stage.csv");
+	GenerateBlock();
 #pragma endregion
 
-#pragma region ブロック配置の初期化
-	// 要素数
-	const uint32_t kNumBlockVertical = 10;
-	const uint32_t kNumBlockHorizontal = 20;
-	// 横幅
-	const float kBlockWidth = 2.0f;
-	const float kBlockHeight = 2.0f;
 
-	// 要素数の変更
-	worldTransformBlocks_.resize(kNumBlockVertical);
-
-	for (uint32_t i = 0; i < kNumBlockVertical; ++i) {
-		worldTransformBlocks_[i].resize(kNumBlockHorizontal);
-	}
-	// 生成
-	for (uint32_t i = 0; i < kNumBlockVertical; i++) {
-		for (uint32_t j = 0; j < kNumBlockHorizontal; j++) {
-			if (i % 2 == 0 || j % 2 == 0) {
-				// ワールドトランスフォームの生成
-				worldTransformBlocks_[i][j] = new WorldTransform();
-				worldTransformBlocks_[i][j]->Initialize();
-				worldTransformBlocks_[i][j]->translation_.x = kBlockWidth * j;
-				worldTransformBlocks_[i][j]->translation_.y = kBlockHeight * i;
-				if (i % 2 == 0 && j % 2 == 0) {
-					// ワールドトランスフォームの生成
-					worldTransformBlocks_[i][j] = nullptr;
-				}
-			}
-		}
-	}
-	scale_ = {0};
-	rotate_ = {0};
-	translate_ = {0};
-#pragma endregion
 }
 
 GameScene::~GameScene() {
@@ -65,21 +37,27 @@ GameScene::~GameScene() {
 	delete model_;
 	delete skydome_;
 	delete debugCamera_;
-	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
+	delete mapChipField_;
+	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
 			delete worldTransformBlock;
 		}
+
+
 	}
-	worldTransformBlocks_.clear();
+	worldTransFormBlocks_.clear();
 }
 
 void GameScene::Update() {
 #pragma region ブロック配置の更新
-	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
+	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
 			if (!worldTransformBlock) {
 				continue;
 			}
+
+
+
 			// ワールドトランスフォームの更新
 			// scaleの変換
 			scale_.x = static_cast<float>(worldTransformBlock->scale_.x);
@@ -123,7 +101,7 @@ void GameScene::Draw() {
 	// スカイドームの描画
 	skydome_->Draw();
 	// スプライトの描画
-	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
+	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
 			if (!worldTransformBlock) {
 				continue;
@@ -136,4 +114,41 @@ void GameScene::Draw() {
 #endif
 
 	Model::PostDraw();
+}
+
+void GameScene::GenerateBlock() {
+#pragma region ブロック配置の初期化
+	// 要素数
+	const uint32_t kNumBlockVertical = 20;
+	const uint32_t kNumBlockHorizontal = 100;
+
+	// 横幅
+	const float kBlockWidth = 2.0f;
+	const float kBlockHeight = 2.0f;
+
+	// 要素数の変更
+	worldTransFormBlocks_.resize(kNumBlockVertical);
+
+	for (uint32_t i = 0; i < kNumBlockVertical; ++i) {
+		worldTransFormBlocks_[i].resize(kNumBlockHorizontal);
+	}
+	// 生成
+	for (uint32_t i = 0; i < kNumBlockVertical; i++) {
+		for (uint32_t j = 0; j < kNumBlockHorizontal; j++) {
+			if (mapChipField_->GetMapChipTypeIndex(j,i)==MapChipType::kBlock) {
+				// ワールドトランスフォームの生成
+				WorldTransform* worldTransForm = new WorldTransform();
+				worldTransForm->Initialize();
+				worldTransFormBlocks_[i][j]=worldTransForm;
+				worldTransFormBlocks_[i][j]->translation_=mapChipField_->GetMapChipPositionByIndex(j,i);
+				worldTransFormBlocks_[i][j]->translation_.x *= kBlockWidth;
+				worldTransFormBlocks_[i][j]->translation_.y *= kBlockHeight;
+				
+			}
+		}
+	}
+	scale_ = {0};
+	rotate_ = {0};
+	translate_ = {0};
+#pragma endregion
 }

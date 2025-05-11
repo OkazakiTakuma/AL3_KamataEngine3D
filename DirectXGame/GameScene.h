@@ -3,7 +3,7 @@
 #include "Skydome.h"
 #include "Matrix.h"
 #include <vector>
-
+#include"MapChipFIeld.h"
 
 class GameScene {
 public:
@@ -11,6 +11,7 @@ public:
 	~GameScene();
 	void Update();
 	void Draw();
+	void GenerateBlock();
 
 private:
 	// テクスチャーハンドル
@@ -26,10 +27,12 @@ private:
 	// デバッグカメラ
 	KamataEngine::DebugCamera* debugCamera_ = nullptr;
 
-	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
+	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransFormBlocks_;
 
 	// スカイドーム
 	Skydome* skydome_ = nullptr;
+	// マップチップフィールド
+	MapChipFIeld* mapChipField_ = nullptr;
 	Vector3Matrix scale_;
 	Vector3Matrix rotate_;
 	Vector3Matrix translate_;
