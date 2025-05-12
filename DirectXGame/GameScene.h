@@ -3,7 +3,7 @@
 #include "Skydome.h"
 #include "Matrix.h"
 #include <vector>
-
+#include "Player.h"
 
 class GameScene {
 public:
@@ -27,6 +27,9 @@ private:
 	KamataEngine::DebugCamera* debugCamera_ = nullptr;
 
 	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
+
+	// 自キャラ
+	Player* player_ = nullptr;
 
 	// スカイドーム
 	Skydome* skydome_ = nullptr;

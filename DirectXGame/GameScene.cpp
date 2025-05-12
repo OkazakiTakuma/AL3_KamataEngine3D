@@ -58,6 +58,10 @@ void GameScene::Initialize() {
 	rotate_ = {0};
 	translate_ = {0};
 #pragma endregion
+	// 自キャラの生成
+	player_ = new Player();
+	// 自キャラの初期化
+	player_->Initialize(&debugCamera_->GetCamera());
 }
 
 GameScene::~GameScene() {
@@ -112,6 +116,8 @@ void GameScene::Update() {
 	debugCamera_->Update();
 
 #endif
+	// 自キャラの更新
+	player_->Update();
 }
 
 void GameScene::Draw() {
@@ -131,6 +137,8 @@ void GameScene::Draw() {
 			model_->Draw(*worldTransformBlock, debugCamera_->GetCamera());
 		}
 	}
+	// 自キャラの描画
+	player_->Draw();
 #ifdef _DEBUG
 	PrimitiveDrawer::GetInstance()->DrawLine3d({0, 0, 0}, {10, 0, 10}, {1.0f, 0.0f, 0.0f, 1.0f});
 #endif
