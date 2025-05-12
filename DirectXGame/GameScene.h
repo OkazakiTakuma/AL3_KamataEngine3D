@@ -39,8 +39,7 @@ private:
 	// マップチップフィールド
 	MapChipFIeld* mapChipField_ = nullptr;
 	/// プレイヤー
-	// 3Dモデル
-	KamataEngine::Model* playerModel_ = nullptr;
+
 	// プレイヤーの初期座標
 	KamataEngine::Vector3 playerPosition_ = {0, 0, 0};
 	// 自キャラ

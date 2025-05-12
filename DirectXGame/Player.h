@@ -19,7 +19,7 @@ public:
 	/// <param name="model">モデル</param>
 	/// <param name="textureHandle">テクスチャーハンドル</param>
 	/// <param name="camera">カメラ</param>
-	void Initialize(KamataEngine::Model* model, uint32_t textureHandle, const KamataEngine::Camera* camera, const KamataEngine::Vector3& position);
+	void Initialize( const KamataEngine::Camera* camera, const KamataEngine::Vector3& position);
 	/// <summary>
 	/// デストラクタ
 	/// </summary>

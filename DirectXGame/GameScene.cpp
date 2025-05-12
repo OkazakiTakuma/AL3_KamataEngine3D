@@ -33,12 +33,10 @@ void GameScene::Initialize() {
 	// プレイヤーの初期座標を設定
 	playerPosition_.x *= 2.0f;
 	playerPosition_.y *= 2.0f;
-	// 3Dモデルの作成
-	playerModel_ = Model::Create();
 	// 自キャラの生成
 	player_ = new Player();
 	// 自キャラの初期化
-	player_->Initialize(playerModel_, tecstureHandle_, &debugCamera_->GetCamera(),playerPosition_);
+	player_->Initialize(&debugCamera_->GetCamera(),playerPosition_);
 #pragma endregion
 #pragma endregion
 
@@ -51,7 +49,6 @@ GameScene::~GameScene() {
 	delete skydome_;
 	delete debugCamera_;
 	delete mapChipField_;
-	delete playerModel_;
 	delete player_;
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {

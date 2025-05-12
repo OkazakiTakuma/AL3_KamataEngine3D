@@ -3,10 +3,8 @@
 
 using namespace KamataEngine;
 
-void Player::Initialize(Model* model, uint32_t textureHandle, const Camera* camera, const Vector3& position) {
-	textstureHandle_ = textureHandle;
-	assert(model);
-	model_ = model;
+void Player::Initialize( const Camera* camera, const Vector3& position) {
+	model_ = Model::CreateFromOBJ("player", true);
 	camera_ = camera;
 	groundPostion_ = position.y;
 	// ワールドトランスフォームの初期化
