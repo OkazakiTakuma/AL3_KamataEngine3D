@@ -1,9 +1,10 @@
 #pragma once
 #include "KamataEngine.h"
-#include "Skydome.h"
+#include "MapChipFIeld.h"
 #include "Matrix.h"
+#include "Player.h"
+#include "Skydome.h"
 #include <vector>
-#include"MapChipFIeld.h"
 
 class GameScene {
 public:
@@ -29,11 +30,19 @@ private:
 
 	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransFormBlocks_;
 
+	Vector3Matrix scale_;
+	Vector3Matrix rotate_;
+	Vector3Matrix translate_;
+
 	// スカイドーム
 	Skydome* skydome_ = nullptr;
 	// マップチップフィールド
 	MapChipFIeld* mapChipField_ = nullptr;
-	Vector3Matrix scale_;
-	Vector3Matrix rotate_;
-	Vector3Matrix translate_;
+	/// プレイヤー
+	// 3Dモデル
+	KamataEngine::Model* playerModel_ = nullptr;
+	// プレイヤーの初期座標
+	KamataEngine::Vector3 playerPosition_ = {0, 0, 0};
+	// 自キャラ
+	Player* player_ = nullptr;
 };

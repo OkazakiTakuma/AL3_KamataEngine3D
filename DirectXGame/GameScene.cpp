@@ -3,8 +3,6 @@ using namespace KamataEngine;
 
 void GameScene::Initialize() {
 #pragma region 画像・3Dモデル生成
-	tecstureHandle_ = TextureManager::Load("mario.jpg");
-	sprite_ = Sprite::Create(tecstureHandle_, {100, 50});
 	// 3Dモデルの作成
 	model_ = Model::Create();
 	// ワールドトランスフォームの初期化
@@ -27,6 +25,21 @@ void GameScene::Initialize() {
 	// マップチップデータの読み込み
 	mapChipField_->LoadMapChipCsv("Resources/stage.csv");
 	GenerateBlock();
+#pragma region 自キャラの初期化
+	tecstureHandle_ = TextureManager::Load("mario.jpg");
+	sprite_ = Sprite::Create(tecstureHandle_, {100, 50});
+	// 座標をマップチップ番号で指定
+	playerPosition_ = mapChipField_->GetMapChipPositionByIndex(1, 16);
+	// プレイヤーの初期座標を設定
+	playerPosition_.x *= 2.0f;
+	playerPosition_.y *= 2.0f;
+	// 3Dモデルの作成
+	playerModel_ = Model::Create();
+	// 自キャラの生成
+	player_ = new Player();
+	// 自キャラの初期化
+	player_->Initialize(playerModel_, tecstureHandle_, &debugCamera_->GetCamera(),playerPosition_);
+#pragma endregion
 #pragma endregion
 
 
@@ -38,6 +51,8 @@ GameScene::~GameScene() {
 	delete skydome_;
 	delete debugCamera_;
 	delete mapChipField_;
+	delete playerModel_;
+	delete player_;
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
 			delete worldTransformBlock;
@@ -49,6 +64,8 @@ GameScene::~GameScene() {
 }
 
 void GameScene::Update() {
+	// 自キャラの更新
+	player_->Update();
 #pragma region ブロック配置の更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -107,8 +124,11 @@ void GameScene::Draw() {
 				continue;
 			}
 			model_->Draw(*worldTransformBlock, debugCamera_->GetCamera());
+			
 		}
 	}
+	// 自キャラの描画
+	player_->Draw();
 #ifdef _DEBUG
 	PrimitiveDrawer::GetInstance()->DrawLine3d({0, 0, 0}, {10, 0, 10}, {1.0f, 0.0f, 0.0f, 1.0f});
 #endif
