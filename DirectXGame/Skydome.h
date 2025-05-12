@@ -2,6 +2,7 @@
 #include "KamataEngine.h"
 
 
+
 class Skydome {
 public:
 	void Initialize(const KamataEngine::Camera* camera);

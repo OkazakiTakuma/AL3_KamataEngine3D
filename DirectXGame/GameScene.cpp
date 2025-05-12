@@ -33,6 +33,7 @@ void GameScene::Initialize() {
 	// プレイヤーの初期座標を設定
 	playerPosition_.x *= 2.0f;
 	playerPosition_.y *= 2.0f;
+	playerPosition_.z = -0.01f;
 	// 自キャラの生成
 	player_ = new Player();
 	// 自キャラの初期化
@@ -73,28 +74,7 @@ void GameScene::Update() {
 
 
 			// ワールドトランスフォームの更新
-			// scaleの変換
-			scale_.x = static_cast<float>(worldTransformBlock->scale_.x);
-			scale_.y = static_cast<float>(worldTransformBlock->scale_.y);
-			scale_.z = static_cast<float>(worldTransformBlock->scale_.z);
-			// rotateの変換
-			rotate_.x = static_cast<float>(worldTransformBlock->rotation_.x);
-			rotate_.y = static_cast<float>(worldTransformBlock->rotation_.y);
-			rotate_.z = static_cast<float>(worldTransformBlock->rotation_.z);
-			// translateの変換
-			translate_.x = static_cast<float>(worldTransformBlock->translation_.x);
-			translate_.y = static_cast<float>(worldTransformBlock->translation_.y);
-			translate_.z = static_cast<float>(worldTransformBlock->translation_.z);
-			// アフィン変換
-			Matrix4x4Afifne affine = MakeAffineMatrix(scale_, rotate_, translate_);
-			for (int i = 0; i < 4; i++) {
-				for (int j = 0; j < 4; j++) {
-					// ワールドトランスフォームの行列にアフィン変換を適用
-					worldTransformBlock->matWorld_.m[j][i] = affine.m[j][i];
-				}
-			}
-			// ワールドトランスフォームの転送
-			worldTransformBlock->TransferMatrix();
+			WorldTransformUpdate(*worldTransformBlock);
 		}
 	}
 #pragma endregion

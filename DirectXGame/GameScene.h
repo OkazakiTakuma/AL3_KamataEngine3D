@@ -4,6 +4,7 @@
 #include "Matrix.h"
 #include "Player.h"
 #include "Skydome.h"
+#include "worldMatrix.h"
 #include <vector>
 
 class GameScene {
