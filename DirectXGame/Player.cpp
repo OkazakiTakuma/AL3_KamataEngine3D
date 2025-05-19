@@ -3,9 +3,8 @@
 
 using namespace KamataEngine;
 
-void Player::Initialize( const Camera* camera, const Vector3& position) {
+void Player::Initialize( const Vector3& position) {
 	model_ = Model::CreateFromOBJ("player", true);
-	camera_ = camera;
 	groundPostion_ = position.y;
 	// ワールドトランスフォームの初期化
 	worldTransform_.Initialize();
@@ -130,7 +129,11 @@ void Player::Update() {
 	
 }
 
-void Player::Draw() {
+void Player::Draw(const Camera* camera ) {
 	// 3Dモデルを描画
-	model_->Draw(worldTransform_, *camera_, textstureHandle_, nullptr);
+	model_->Draw(worldTransform_, *camera, textstureHandle_, nullptr);
 }
+
+const KamataEngine::WorldTransform& Player::GetWorldTransform() { return worldTransform_; }
+
+

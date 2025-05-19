@@ -7,7 +7,7 @@
 #include <numbers>
 #include<cmath>
 #include"worldMatrix.h"
-
+#include<imgui.h>
 enum class LRDirection {
 	kRight,
 	kLeft,
@@ -20,7 +20,7 @@ public:
 	/// <param name="model">モデル</param>
 	/// <param name="textureHandle">テクスチャーハンドル</param>
 	/// <param name="camera">カメラ</param>
-	void Initialize( const KamataEngine::Camera* camera, const KamataEngine::Vector3& position);
+	void Initialize( const KamataEngine::Vector3& position);
 	/// <summary>
 	/// デストラクタ
 	/// </summary>
@@ -32,7 +32,10 @@ public:
 	/// <summary>
 	/// 描画処理
 	/// </summary>
-	void Draw();
+	void Draw(const KamataEngine::Camera* camera);
+	
+const KamataEngine::WorldTransform &GetWorldTransform();
+	const KamataEngine::Vector3& GetVelocoty() { return velocity_; }
 
 private:
 	// ワールド変換データ
@@ -48,9 +51,9 @@ private:
 	// プレイヤーの移動速度
 	KamataEngine::Vector3 acceleration_ = {0, 0, 0};
 	// プレイヤーの加速度
-	static inline const float kAcceleration = 0.001f;
+	static inline const float kAcceleration = 0.01f;
 	static inline const float kAttenuation = 0.1f;
-	static inline const float kLimitRunspeed = 0.1f;
+	static inline const float kLimitRunspeed = 0.5f;
 	// プレイヤーの向き
 	LRDirection lrDirection_ = LRDirection::kRight;
 	// プレイヤーの旋回開始時の角度
@@ -63,11 +66,11 @@ private:
 	// 接地状態フラグ
 	bool onGround_ = true;
 	// 重力加速度(下)
-	static inline const float kGravityAccleration = 0.005f;
+	static inline const float kGravityAccleration = 0.01f;
 	// 最大落下速度
-	static inline const float kMaxFallSpeed = 0.1f;	
+	static inline const float kMaxFallSpeed = 1.0f;	
 	// ジャンプ力
-	static inline const float kJumpPower = 0.1f;
+	static inline const float kJumpPower = 0.4f;
 	// 
 	float groundPostion_;
 	Vector3Matrix scale_;

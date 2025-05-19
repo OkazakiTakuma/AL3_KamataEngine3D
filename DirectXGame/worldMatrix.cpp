@@ -23,3 +23,18 @@ for (int i = 0; i < 4; i++) {
 // ワールドトランスフォームの転送
 worldTransform.TransferMatrix();
 }
+
+Vector3 Leap(Vector3 startPosition, Vector3 endPosition, float addTimer) {
+	// 時間を 0.0 ～ 1.0 の範囲に制限
+	addTimer = std::clamp(addTimer, 0.0f, 1.0f);
+
+	// 線形補間 (Lerp)
+	Vector3 result;
+	result.x = startPosition.x + (endPosition.x - startPosition.x) * addTimer;
+	result.y = startPosition.y + (endPosition.y - startPosition.y) * addTimer;
+	result.z = startPosition.z + (endPosition.z - startPosition.z) * addTimer;
+
+	return result;
+
+
+}

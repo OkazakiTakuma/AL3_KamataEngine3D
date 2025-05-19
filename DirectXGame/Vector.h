@@ -1,4 +1,6 @@
 #pragma once
+#include<cmath>
+
 struct Vector3Matrix {
 	float x, y, z;
 };

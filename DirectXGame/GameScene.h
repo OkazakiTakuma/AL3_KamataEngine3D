@@ -5,6 +5,7 @@
 #include "Player.h"
 #include "Skydome.h"
 #include "worldMatrix.h"
+#include "CameraController.h"
 #include <vector>
 
 class GameScene {
@@ -39,6 +40,8 @@ private:
 	Skydome* skydome_ = nullptr;
 	// マップチップフィールド
 	MapChipFIeld* mapChipField_ = nullptr;
+	// カメラコントローラー
+	CameraController* cameraController_ = nullptr;
 	/// プレイヤー
 
 	// プレイヤーの初期座標

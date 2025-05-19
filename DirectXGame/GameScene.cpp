@@ -29,7 +29,7 @@ void GameScene::Initialize() {
 	tecstureHandle_ = TextureManager::Load("mario.jpg");
 	sprite_ = Sprite::Create(tecstureHandle_, {100, 50});
 	// 座標をマップチップ番号で指定
-	playerPosition_ = mapChipField_->GetMapChipPositionByIndex(1, 16);
+	playerPosition_ = mapChipField_->GetMapChipPositionByIndex(2, 16);
 	// プレイヤーの初期座標を設定
 	playerPosition_.x *= 2.0f;
 	playerPosition_.y *= 2.0f;
@@ -37,10 +37,16 @@ void GameScene::Initialize() {
 	// 自キャラの生成
 	player_ = new Player();
 	// 自キャラの初期化
-	player_->Initialize(&debugCamera_->GetCamera(),playerPosition_);
+	player_->Initialize(playerPosition_);
 #pragma endregion
 #pragma endregion
 
+	// カメラの初期化
+	cameraController_ = new CameraController();
+	cameraController_->Initialize();
+	cameraController_->SetTarget(player_);
+	cameraController_->Reset();
+	cameraController_->SetMovableArea(Rect(25, 100,15, 100));
 
 }
 
@@ -63,6 +69,7 @@ GameScene::~GameScene() {
 
 void GameScene::Update() {
 	// 自キャラの更新
+	cameraController_->Update();
 	player_->Update();
 #pragma region ブロック配置の更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
@@ -100,12 +107,12 @@ void GameScene::Draw() {
 			if (!worldTransformBlock) {
 				continue;
 			}
-			model_->Draw(*worldTransformBlock, debugCamera_->GetCamera());
+			model_->Draw(*worldTransformBlock, cameraController_->GetCamera());
 			
 		}
 	}
 	// 自キャラの描画
-	player_->Draw();
+	player_->Draw(&cameraController_->GetCamera());
 #ifdef _DEBUG
 	PrimitiveDrawer::GetInstance()->DrawLine3d({0, 0, 0}, {10, 0, 10}, {1.0f, 0.0f, 0.0f, 1.0f});
 #endif
