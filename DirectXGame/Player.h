@@ -2,16 +2,35 @@
 #pragma once
 #include "KamataEngine.h"
 #include "Matrix.h"
+#include "worldMatrix.h"
 #include <algorithm>
 #include <assert.h>
+#include <cmath>
+#include <imgui.h>
 #include <numbers>
-#include<cmath>
-#include"worldMatrix.h"
-#include<imgui.h>
 enum class LRDirection {
 	kRight,
 	kLeft,
 };
+static inline const float kWidth = 0.8f;
+static inline const float kHeight = 0.8f;
+enum Corner {
+	kRightBottom, // 右下
+	kLeftBottom,  // 左下
+	kRightTop,    // 右上
+	kLeftTop,     // 左上
+
+	kNumCorner	  // 要素数
+};
+
+struct CollisionMapInfo {
+	bool isCeilingCollision = false;
+	bool isFloorCollision = false;
+	bool isWoolCollision = false;
+	KamataEngine::Vector3 movement;
+};
+
+class MapChipField;
 class Player {
 public:
 	/// <summary>
@@ -20,7 +39,7 @@ public:
 	/// <param name="model">モデル</param>
 	/// <param name="textureHandle">テクスチャーハンドル</param>
 	/// <param name="camera">カメラ</param>
-	void Initialize( const KamataEngine::Vector3& position);
+	void Initialize(const KamataEngine::Vector3& position);
 	/// <summary>
 	/// デストラクタ
 	/// </summary>
@@ -33,9 +52,26 @@ public:
 	/// 描画処理
 	/// </summary>
 	void Draw(const KamataEngine::Camera* camera);
-	
-const KamataEngine::WorldTransform &GetWorldTransform();
-	const KamataEngine::Vector3& GetVelocoty() { return velocity_; }
+
+	/// <summary>
+	/// ワールドトランスフォームを参照
+	/// </summary>
+	/// <returns></returns>
+	const KamataEngine::WorldTransform& GetWorldTransform();
+
+	/// <summary>
+	/// 速度を参照
+	/// </summary>
+	/// <returns></returns>
+	const KamataEngine::Vector3& GetVelocity() { return velocity_; }
+
+	void SetMapChipField(MapChipField* mapChipField) { mapChipField_ = mapChipField; }
+	/// <summary>
+	/// 判定結果を反映させて移動させる
+	/// </summary>
+	void Move(const CollisionMapInfo&info);
+
+	void CollisonCeiling(CollisionMapInfo& info);
 
 private:
 	// ワールド変換データ
@@ -68,13 +104,25 @@ private:
 	// 重力加速度(下)
 	static inline const float kGravityAccleration = 0.01f;
 	// 最大落下速度
-	static inline const float kMaxFallSpeed = 1.0f;	
+	static inline const float kMaxFallSpeed = 1.0f;
 	// ジャンプ力
 	static inline const float kJumpPower = 0.4f;
-	// 
-	float groundPostion_;
-	Vector3Matrix scale_;
-	Vector3Matrix rotate_;
-	Vector3Matrix translate_;
-	
+	//
+	float groundPostion_ = 0;
+	Vector3Matrix scale_ = {0};
+	Vector3Matrix rotate_ = {0};
+	Vector3Matrix translate_ = {0};
+	MapChipField* mapChipField_ = nullptr;
+	// キャラクターの当たり判定の大きさ
+	static inline const float kBlank = 0.5f;
+	void KeyMove();
 };
+void IsMapCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform, MapChipField* mapChipField);
+void IsTopCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform_, MapChipField* mapChipField);
+void IsBottomCollision(CollisionMapInfo& info) ;
+
+void IsRightCollision(CollisionMapInfo& info);
+
+void IsLeftCollision(CollisionMapInfo& info);
+
+KamataEngine::Vector3 CornerPosition(const KamataEngine::Vector3& centor, Corner corner);

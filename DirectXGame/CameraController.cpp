@@ -8,9 +8,9 @@ void CameraController::Update() {
 	// 追従対象のワールドトランスフォームの取得
 	const WorldTransform& targetWorldTransform = target_->GetWorldTransform();
 	// 追従対象とオフセットからカメラの座標を求める
-	endCameraTranslate_.x = targetWorldTransform.translation_.x + targetOffset_.x + target_->GetVelocoty().x * kVelocityBias;
-	endCameraTranslate_.y = targetWorldTransform.translation_.y + targetOffset_.y + target_->GetVelocoty().y * kVelocityBias;
-	endCameraTranslate_.z = targetWorldTransform.translation_.z + targetOffset_.z + target_->GetVelocoty().z * kVelocityBias;
+	endCameraTranslate_.x = targetWorldTransform.translation_.x + targetOffset_.x + target_->GetVelocity().x * kVelocityBias;
+	endCameraTranslate_.y = targetWorldTransform.translation_.y + targetOffset_.y + target_->GetVelocity().y * kVelocityBias;
+	endCameraTranslate_.z = targetWorldTransform.translation_.z + targetOffset_.z + target_->GetVelocity().z * kVelocityBias;
 	// 線形補間
 	camera_.translation_ = Leap(camera_.translation_, endCameraTranslate_, kInteroilationRote);
 

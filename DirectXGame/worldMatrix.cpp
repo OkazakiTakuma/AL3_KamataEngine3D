@@ -38,3 +38,11 @@ Vector3 Leap(Vector3 startPosition, Vector3 endPosition, float addTimer) {
 
 
 }
+Vector3 Add(const Vector3& v1, const Vector3& v2) { 
+	Vector3Matrix v1_ = {v1.x, v1.y, v1.z};
+	Vector3Matrix v2_ = {v2.x, v2.y, v2.z};
+	Vector3Matrix v3_= Add(v1_, v2_);
+
+	return Vector3(v3_.x,v3_.y,v3_.z);
+
+}

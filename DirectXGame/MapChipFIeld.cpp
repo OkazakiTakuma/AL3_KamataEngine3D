@@ -10,7 +10,7 @@ std::unordered_map<std::string, MapChipType> mapChipTable = {
 };
 }
 
-void MapChipFIeld::ResetMapChipData() {
+void MapChipField::ResetMapChipData() {
 	// マップチップデータのリセット
 	mapChipData_.data.clear();
 	mapChipData_.data.resize(kNumBlockVertical);
@@ -19,7 +19,7 @@ void MapChipFIeld::ResetMapChipData() {
 	}
 }
 
-void MapChipFIeld::LoadMapChipCsv(const std::string& filePath) {
+void MapChipField::LoadMapChipCsv(const std::string& filePath) {
 	// マップチップデータのリセット
 	ResetMapChipData();
 	// CSVファイルを開く
@@ -55,7 +55,7 @@ void MapChipFIeld::LoadMapChipCsv(const std::string& filePath) {
 	}
 }
 
-MapChipType MapChipFIeld::GetMapChipTypeIndex(uint32_t xIndex, uint32_t yIndex) {
+MapChipType MapChipField::GetMapChipTypeIndex(uint32_t xIndex, uint32_t yIndex) {
 	if (xIndex < 0|| kNumBlockHorizontal-1<xIndex) {
 		return MapChipType::kBlank;
 	}
@@ -65,4 +65,23 @@ MapChipType MapChipFIeld::GetMapChipTypeIndex(uint32_t xIndex, uint32_t yIndex) 
 	return mapChipData_.data[yIndex][xIndex];
 }
 
-Vector3 MapChipFIeld::GetMapChipPositionByIndex(uint32_t xIndex, uint32_t yIndex) { return Vector3(kBlockWidth * xIndex, kBlockHeight * (kNumBlockVertical - 1 - yIndex), 0); }
+Vector3 MapChipField::GetMapChipPositionByIndex(uint32_t xIndex, uint32_t yIndex) { return Vector3(kBlockWidth * xIndex, kBlockHeight * (kNumBlockVertical - 1 - yIndex), 0); }
+
+MapChipField::IndexSet MapChipField::GetMapChipIndexByPosition(const KamataEngine::Vector3& position) { 
+	// X座標からXインデックスを計算
+	mapChipIndex_.xIndex = static_cast<uint32_t>((position.x+kBlockWidth/2)/kBlockWidth);
+	// Y座標からYインデックスを計算
+	mapChipIndex_.yIndex = static_cast<uint32_t>(kNumBlockVertical-1-((position.y+kBlockHeight/2)/kBlockHeight));
+	return mapChipIndex_;
+}
+
+MapChipField::Rect MapChipField::GetMapChipRectByIndex(uint32_t xIndex, uint32_t yIndex) {
+	Vector3 position = GetMapChipPositionByIndex(xIndex, yIndex);
+
+	Rect rect;
+	rect.left = position.x - kBlockWidth / 2.0f;
+	rect.right = position.x + kBlockWidth / 2.0f;
+	rect.bottom = position.y - kBlockHeight / 2.0f;
+	rect.top = position.y + kBlockHeight / 2.0f;
+	return rect;
+}

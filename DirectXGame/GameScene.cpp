@@ -16,15 +16,17 @@ void GameScene::Initialize() {
 	AxisIndicator::GetInstance()->SetVisible(true);
 	// 軸方向表示が参照するビュープロジェクション
 	AxisIndicator::GetInstance()->SetTargetCamera(&debugCamera_->GetCamera());
-
+#pragma region スカイドームとマップチップの初期化
 	// スカイドームの生成
 	skydome_ = new Skydome();
 	skydome_->Initialize(&debugCamera_->GetCamera());
 	// マップチップフィールドの生成
-	mapChipField_ = new MapChipFIeld;
+	mapChipField_ = new MapChipField;
 	// マップチップデータの読み込み
 	mapChipField_->LoadMapChipCsv("Resources/stage.csv");
 	GenerateBlock();
+#pragma endregion
+
 #pragma region 自キャラの初期化
 	tecstureHandle_ = TextureManager::Load("mario.jpg");
 	sprite_ = Sprite::Create(tecstureHandle_, {100, 50});
@@ -38,6 +40,7 @@ void GameScene::Initialize() {
 	player_ = new Player();
 	// 自キャラの初期化
 	player_->Initialize(playerPosition_);
+	player_->SetMapChipField(mapChipField_);
 #pragma endregion
 #pragma endregion
 

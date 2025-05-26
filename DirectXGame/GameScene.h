@@ -39,7 +39,7 @@ private:
 	// スカイドーム
 	Skydome* skydome_ = nullptr;
 	// マップチップフィールド
-	MapChipFIeld* mapChipField_ = nullptr;
+	MapChipField* mapChipField_ = nullptr;
 	// カメラコントローラー
 	CameraController* cameraController_ = nullptr;
 	/// プレイヤー
