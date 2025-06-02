@@ -17,6 +17,9 @@ public:
 	void GenerateBlock();
 
 private:
+	const float kBlockWidth = 2.0f;
+	const float kBlockHeight = 2.0f;
+
 	// テクスチャーハンドル
 	uint32_t tecstureHandle_ = 0;
 	// スプライト

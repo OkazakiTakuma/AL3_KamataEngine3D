@@ -1,6 +1,6 @@
 #include "GameScene.h"
 using namespace KamataEngine;
-
+// 横幅
 void GameScene::Initialize() {
 #pragma region 画像・3Dモデル生成
 	// 3Dモデルの作成
@@ -33,8 +33,8 @@ void GameScene::Initialize() {
 	// 座標をマップチップ番号で指定
 	playerPosition_ = mapChipField_->GetMapChipPositionByIndex(2, 16);
 	// プレイヤーの初期座標を設定
-	playerPosition_.x *= 2.0f;
-	playerPosition_.y *= 2.0f;
+	playerPosition_.x *= kBlockWidth;
+	playerPosition_.y *= kBlockHeight;
 	playerPosition_.z = -0.01f;
 	// 自キャラの生成
 	player_ = new Player();
@@ -129,9 +129,7 @@ void GameScene::GenerateBlock() {
 	const uint32_t kNumBlockVertical = 20;
 	const uint32_t kNumBlockHorizontal = 100;
 
-	// 横幅
-	const float kBlockWidth = 2.0f;
-	const float kBlockHeight = 2.0f;
+	
 
 	// 要素数の変更
 	worldTransFormBlocks_.resize(kNumBlockVertical);

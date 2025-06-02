@@ -51,7 +51,7 @@ public:
 private:
 	KamataEngine::Camera camera_; // カメラ
 	Player* target_ = nullptr;               // プレイヤー
-	Vector3Matrix targetOffset_ = {0, 0, -30.0f};  // 追従対象とカメラの座標の差（オフセット）
+	Vector3Matrix targetOffset_ = {0, 0, -40.0f};  // 追従対象とカメラの座標の差（オフセット）
 	Matrix4x4Afifne viewProjection;
 	Rect movableArea_;
 	KamataEngine::Vector3 endCameraTranslate_; //カメラの目標座標

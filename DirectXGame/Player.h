@@ -12,8 +12,8 @@ enum class LRDirection {
 	kRight,
 	kLeft,
 };
-static inline const float kWidth = 0.8f;
-static inline const float kHeight = 0.8f;
+static inline const float kWidth = 0.8f*2;
+static inline const float kHeight = 0.8f*2;
 enum Corner {
 	kRightBottom, // 右下
 	kLeftBottom,  // 左下
@@ -26,7 +26,7 @@ enum Corner {
 struct CollisionMapInfo {
 	bool isCeilingCollision = false;
 	bool isFloorCollision = false;
-	bool isWoolCollision = false;
+	bool isWallCollision = false;
 	KamataEngine::Vector3 movement;
 };
 
@@ -69,9 +69,13 @@ public:
 	/// <summary>
 	/// 判定結果を反映させて移動させる
 	/// </summary>
-	void Move(const CollisionMapInfo&info);
+	void Move(const CollisionMapInfo& info);
 
-	void CollisonCeiling(CollisionMapInfo& info);
+	void CollisionCeiling(CollisionMapInfo& info);
+
+	void CollisionFloor(CollisionMapInfo& info);
+
+	void CollisionWall(CollisionMapInfo& info);
 
 private:
 	// ワールド変換データ
@@ -89,6 +93,7 @@ private:
 	// プレイヤーの加速度
 	static inline const float kAcceleration = 0.01f;
 	static inline const float kAttenuation = 0.1f;
+	static inline const float kAttenuationWall = 0.5f; // 最大移動速度
 	static inline const float kLimitRunspeed = 0.5f;
 	// プレイヤーの向き
 	LRDirection lrDirection_ = LRDirection::kRight;
@@ -100,7 +105,7 @@ private:
 	static inline const float kTimeturn = 0.3f;
 
 	// 接地状態フラグ
-	bool onGround_ = true;
+	bool onGround_ = false;
 	// 重力加速度(下)
 	static inline const float kGravityAccleration = 0.01f;
 	// 最大落下速度
@@ -108,21 +113,22 @@ private:
 	// ジャンプ力
 	static inline const float kJumpPower = 0.4f;
 	//
-	float groundPostion_ = 0;
 	Vector3Matrix scale_ = {0};
 	Vector3Matrix rotate_ = {0};
 	Vector3Matrix translate_ = {0};
 	MapChipField* mapChipField_ = nullptr;
 	// キャラクターの当たり判定の大きさ
-	static inline const float kBlank = 0.5f;
+	static inline const float kBlank = 0.8f;
+
 	void KeyMove();
-};
+	void ChengeOnGround(CollisionMapInfo& info);
+	const float kOverGround = 0.6f; // 接地判定のオーバーグラウンド
+} ;
 void IsMapCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform, MapChipField* mapChipField);
 void IsTopCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform_, MapChipField* mapChipField);
-void IsBottomCollision(CollisionMapInfo& info) ;
+void IsBottomCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform_, MapChipField* mapChipField);
 
-void IsRightCollision(CollisionMapInfo& info);
+void IsRightCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform_, MapChipField* mapChipField);
+void IsLeftCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform_, MapChipField* mapChipField);
 
-void IsLeftCollision(CollisionMapInfo& info);
-
-KamataEngine::Vector3 CornerPosition(const KamataEngine::Vector3& centor, Corner corner);
+	KamataEngine::Vector3 CornerPosition(const KamataEngine::Vector3& centor, Corner corner);

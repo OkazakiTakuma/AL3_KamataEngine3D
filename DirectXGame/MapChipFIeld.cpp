@@ -69,9 +69,9 @@ Vector3 MapChipField::GetMapChipPositionByIndex(uint32_t xIndex, uint32_t yIndex
 
 MapChipField::IndexSet MapChipField::GetMapChipIndexByPosition(const KamataEngine::Vector3& position) { 
 	// X座標からXインデックスを計算
-	mapChipIndex_.xIndex = static_cast<uint32_t>((position.x+kBlockWidth/2)/kBlockWidth);
+	mapChipIndex_.xIndex = static_cast<uint32_t>((position.x+kBlockWidth)/kBlockWidth);
 	// Y座標からYインデックスを計算
-	mapChipIndex_.yIndex = static_cast<uint32_t>(kNumBlockVertical-1-((position.y+kBlockHeight/2)/kBlockHeight));
+	mapChipIndex_.yIndex = static_cast<uint32_t>(kNumBlockVertical-1-((position.y+kBlockHeight)/kBlockHeight));
 	return mapChipIndex_;
 }
 
