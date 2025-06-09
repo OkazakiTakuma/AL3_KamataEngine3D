@@ -1,10 +1,8 @@
 #include "GameScene.h"
 using namespace KamataEngine;
-
+// 横幅
 void GameScene::Initialize() {
 #pragma region 画像・3Dモデル生成
-	tecstureHandle_ = TextureManager::Load("mario.jpg");
-	sprite_ = Sprite::Create(tecstureHandle_, {100, 50});
 	// 3Dモデルの作成
 	model_ = Model::Create();
 	// ワールドトランスフォームの初期化
@@ -18,47 +16,96 @@ void GameScene::Initialize() {
 	AxisIndicator::GetInstance()->SetVisible(true);
 	// 軸方向表示が参照するビュープロジェクション
 	AxisIndicator::GetInstance()->SetTargetCamera(&debugCamera_->GetCamera());
+#pragma region スカイドームとマップチップの初期化
+	// スカイドームの生成
+	skydome_ = new Skydome();
+	skydome_->Initialize(&debugCamera_->GetCamera());
+	// マップチップフィールドの生成
+	mapChipField_ = new MapChipField;
+	// マップチップデータの読み込み
+	mapChipField_->LoadMapChipCsv("Resources/stage.csv");
+	GenerateBlock();
 #pragma endregion
 
-#pragma region 音声生成
-	// サウンドデータの生成
-	soundDataHandle_ = Audio::GetInstance()->LoadWave("BGM.wav");
-	// 音声再生
-	voiceHandle_ = Audio::GetInstance()->PlayWave(soundDataHandle_, true);
+#pragma region 自キャラの初期化
+	tecstureHandle_ = TextureManager::Load("mario.jpg");
+	sprite_ = Sprite::Create(tecstureHandle_, {100, 50});
+	// 座標をマップチップ番号で指定
+	playerPosition_ = mapChipField_->GetMapChipPositionByIndex(2, 16);
+	// プレイヤーの初期座標を設定
+	playerPosition_.x *= kBlockWidth;
+	playerPosition_.y *= kBlockHeight;
+	playerPosition_.z = -0.01f;
+	// 自キャラの生成
+	// プレイヤーモデルの生成
+	playerModel_ = Model::CreateFromOBJ("player", true);
+	player_ = new Player();
+	// 自キャラの初期化
+	player_->Initialize(playerPosition_,playerModel_);
+	player_->SetMapChipField(mapChipField_);
 #pragma endregion
+#pragma region 敵キャラの初期化
+	// 敵キャラのモデルの生成
+	enemyModel_ = Model::CreateFromOBJ("Enemy", true);
+	// 敵キャラの初期座標を設定
+	KamataEngine::Vector3 enemyPosition = {10, 6, 0};
+	// 敵キャラの生成
+	enemy_ = new Enemy();
+	// 敵キャラの初期化
+	enemy_->Initialize(enemyPosition, enemyModel_);
+#pragma endregion
+
+	// カメラの初期化
+	cameraController_ = new CameraController();
+	cameraController_->Initialize();
+	cameraController_->SetTarget(player_);
+	cameraController_->Reset();
+	cameraController_->SetMovableArea(Rect(25, 100,15, 100));
+
 }
 
 GameScene::~GameScene() {
 	delete sprite_;
 	delete model_;
+	delete skydome_;
 	delete debugCamera_;
+	delete mapChipField_;
+	delete player_;
+	delete playerModel_;
+	delete enemy_;
+	delete enemyModel_;
+	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
+		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
+			delete worldTransformBlock;
+		}
+
+
+	}
+	worldTransFormBlocks_.clear();
 }
 
 void GameScene::Update() {
-	Vector2 postion = sprite_->GetPosition();
-	postion.x += 2.0f;
-	postion.y += 2.0f;
-	sprite_->SetPosition(postion);
+	// 自キャラの更新
+	cameraController_->Update();
+	player_->Update();
+	// 敵キャラの更新
+	enemy_->Update();
+#pragma region ブロック配置の更新
+	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
+		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
+			if (!worldTransformBlock) {
+				continue;
+			}
 
-#pragma region 音声
-	// スペースキーを押した瞬間
-	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
-		// 音声停止
-		Audio::GetInstance()->StopWave(voiceHandle_);
+
+
+			// ワールドトランスフォームの更新
+			WorldTransformUpdate(*worldTransformBlock);
+		}
 	}
 #pragma endregion
 
 #ifdef _DEBUG
-	// デバッグテキストの表示
-	ImGui::Text("Okazaki Takuma %d.%d.%d", 2050, 12, 31);
-	ImGui::Begin("Debug1");
-	// float3入力ボックス
-	ImGui::InputFloat3("Inputfloat3", inputFloat3);
-	// float3スライダー
-	ImGui::SliderFloat3("SliderFloat3", inputFloat3, 0.0f, 1.0f);
-	ImGui::End();
-	// デモウィンドウの表示の有効化
-	ImGui::ShowDemoWindow();
 	// デバッグカメラの更新
 	debugCamera_->Update();
 
@@ -68,16 +115,63 @@ void GameScene::Update() {
 void GameScene::Draw() {
 
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
-	// スプライトの描画
-	Sprite::PreDraw(dxCommon->GetCommandList());
-	sprite_->Draw();
-	Sprite::PostDraw();
+
 	// 3Dモデルの描画
 	Model::PreDraw(dxCommon->GetCommandList());
-	model_->Draw(worldTransform_, debugCamera_->GetCamera(), tecstureHandle_);
+	// スカイドームの描画
+	skydome_->Draw();
+	// スプライトの描画
+	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
+		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
+			if (!worldTransformBlock) {
+				continue;
+			}
+			model_->Draw(*worldTransformBlock, cameraController_->GetCamera());
+			
+		}
+	}
+	// 自キャラの描画
+	player_->Draw(&cameraController_->GetCamera());
+	// 敵キャラの描画
+	enemy_->Draw(&cameraController_->GetCamera());
 #ifdef _DEBUG
 	PrimitiveDrawer::GetInstance()->DrawLine3d({0, 0, 0}, {10, 0, 10}, {1.0f, 0.0f, 0.0f, 1.0f});
 #endif
 
 	Model::PostDraw();
+}
+
+void GameScene::GenerateBlock() {
+#pragma region ブロック配置の初期化
+	// 要素数
+	const uint32_t kNumBlockVertical = 20;
+	const uint32_t kNumBlockHorizontal = 100;
+
+	
+
+	// 要素数の変更
+	worldTransFormBlocks_.resize(kNumBlockVertical);
+
+	for (uint32_t i = 0; i < kNumBlockVertical; ++i) {
+		worldTransFormBlocks_[i].resize(kNumBlockHorizontal);
+	}
+	// 生成
+	for (uint32_t i = 0; i < kNumBlockVertical; i++) {
+		for (uint32_t j = 0; j < kNumBlockHorizontal; j++) {
+			if (mapChipField_->GetMapChipTypeIndex(j,i)==MapChipType::kBlock) {
+				// ワールドトランスフォームの生成
+				WorldTransform* worldTransForm = new WorldTransform();
+				worldTransForm->Initialize();
+				worldTransFormBlocks_[i][j]=worldTransForm;
+				worldTransFormBlocks_[i][j]->translation_=mapChipField_->GetMapChipPositionByIndex(j,i);
+				worldTransFormBlocks_[i][j]->translation_.x *= kBlockWidth;
+				worldTransFormBlocks_[i][j]->translation_.y *= kBlockHeight;
+				
+			}
+		}
+	}
+	scale_ = {0};
+	rotate_ = {0};
+	translate_ = {0};
+#pragma endregion
 }
