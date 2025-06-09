@@ -3,6 +3,7 @@
 #include "MapChipFIeld.h"
 #include "Matrix.h"
 #include "Player.h"
+#include "Enemy.h"
 #include "Skydome.h"
 #include "worldMatrix.h"
 #include "CameraController.h"
@@ -51,4 +52,10 @@ private:
 	KamataEngine::Vector3 playerPosition_ = {0, 0, 0};
 	// 自キャラ
 	Player* player_ = nullptr;
+	KamataEngine::Model* playerModel_ = nullptr;
+	// 敵キャラ
+	Enemy* enemy_ = nullptr;
+	// 敵キャラのモデル
+	KamataEngine::Model* enemyModel_ = nullptr;
+	// 敵キャラの初期座標
 };

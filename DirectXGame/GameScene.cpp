@@ -37,11 +37,22 @@ void GameScene::Initialize() {
 	playerPosition_.y *= kBlockHeight;
 	playerPosition_.z = -0.01f;
 	// 自キャラの生成
+	// プレイヤーモデルの生成
+	playerModel_ = Model::CreateFromOBJ("player", true);
 	player_ = new Player();
 	// 自キャラの初期化
-	player_->Initialize(playerPosition_);
+	player_->Initialize(playerPosition_,playerModel_);
 	player_->SetMapChipField(mapChipField_);
 #pragma endregion
+#pragma region 敵キャラの初期化
+	// 敵キャラのモデルの生成
+	enemyModel_ = Model::CreateFromOBJ("Enemy", true);
+	// 敵キャラの初期座標を設定
+	KamataEngine::Vector3 enemyPosition = {10, 6, 0};
+	// 敵キャラの生成
+	enemy_ = new Enemy();
+	// 敵キャラの初期化
+	enemy_->Initialize(enemyPosition, enemyModel_);
 #pragma endregion
 
 	// カメラの初期化
@@ -60,6 +71,9 @@ GameScene::~GameScene() {
 	delete debugCamera_;
 	delete mapChipField_;
 	delete player_;
+	delete playerModel_;
+	delete enemy_;
+	delete enemyModel_;
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
 			delete worldTransformBlock;
@@ -74,6 +88,8 @@ void GameScene::Update() {
 	// 自キャラの更新
 	cameraController_->Update();
 	player_->Update();
+	// 敵キャラの更新
+	enemy_->Update();
 #pragma region ブロック配置の更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -116,6 +132,8 @@ void GameScene::Draw() {
 	}
 	// 自キャラの描画
 	player_->Draw(&cameraController_->GetCamera());
+	// 敵キャラの描画
+	enemy_->Draw(&cameraController_->GetCamera());
 #ifdef _DEBUG
 	PrimitiveDrawer::GetInstance()->DrawLine3d({0, 0, 0}, {10, 0, 10}, {1.0f, 0.0f, 0.0f, 1.0f});
 #endif

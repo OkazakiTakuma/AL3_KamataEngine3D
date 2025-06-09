@@ -5,8 +5,8 @@
 
 using namespace KamataEngine;
 
-void Player::Initialize(const Vector3& position) {
-	model_ = Model::CreateFromOBJ("player", true);
+void Player::Initialize(const Vector3& position, Model* model) {
+	model_ = model;
 	// ワールドトランスフォームの初期化
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;
@@ -315,7 +315,7 @@ void IsRightCollision(CollisionMapInfo& info, const WorldTransform& worldTransfo
 
 		// 右方向の衝突処理
 		info.movement.x = static_cast<float>(rect.left)  -1; // 右方向
-		if (info.movement.x < 0) {
+		if (info.movement.x > 0) {
 			info.movement.x = 0;
 		}
 		info.isWallCollision = true;
