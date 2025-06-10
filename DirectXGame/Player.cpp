@@ -8,6 +8,7 @@ using namespace KamataEngine;
 
 void Player::Initialize(const Vector3& position, Model* model) {
 	model_ = model;
+
 	// ワールドトランスフォームの初期化
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;
@@ -116,7 +117,6 @@ void Player::CollisionWall(CollisionMapInfo& info) {
 void Player::OnCollisionEnemy(Enemy* enemy) {
 	(void)enemy;
 	// ジャンプ移動する
-	velocity_.y += kJumpPower; // ジャンプ力を加える
 }
 
 void Player::KeyMove() {
