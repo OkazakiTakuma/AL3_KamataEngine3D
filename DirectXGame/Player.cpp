@@ -1,4 +1,5 @@
 #include "Player.h"
+#include "Enemy.h"
 #include "MapChipField.h"
 #include <algorithm>
 #include <iostream>
@@ -61,7 +62,26 @@ void Player::Draw(const Camera* camera) {
 	model_->Draw(worldTransform_, *camera, textstureHandle_, nullptr);
 }
 
-const KamataEngine::WorldTransform& Player::GetWorldTransform() { return worldTransform_; }
+Vector3 Player::GetWorldPosition() {
+	Vector3 worldPosition;
+	worldPosition.x = worldTransform_.matWorld_.m[3][0];
+	worldPosition.y = worldTransform_.matWorld_.m[3][1];
+	worldPosition.z = worldTransform_.matWorld_.m[3][2];
+	return worldPosition;
+}
+
+AABB Player::GetAABB() {
+	// AABBの計算
+	AABB aabb;
+	Vector3 worldPosition = GetWorldPosition();
+	worldPosition.y *= 2;
+	aabb.min = worldPosition - Vector3(kWidth / 2, kHeight / 2, kWidth / 2);
+	aabb.max = worldPosition + Vector3(kWidth / 2, kHeight / 2, kWidth / 2);
+
+	return aabb;
+}
+
+const WorldTransform& Player::GetWorldTransform() { return worldTransform_; }
 
 void Player::Move(const CollisionMapInfo& info) {
 	velocity_.x = info.movement.x;
@@ -91,6 +111,12 @@ void Player::CollisionWall(CollisionMapInfo& info) {
 	if (info.isWallCollision) {
 		velocity_.x *= (1.0f - kAttenuationWall); // 壁に衝突した場合は摩擦をかける
 	}
+}
+
+void Player::OnCollisionEnemy(Enemy* enemy) {
+	(void)enemy;
+	// ジャンプ移動する
+	velocity_.y += kJumpPower; // ジャンプ力を加える
 }
 
 void Player::KeyMove() {
@@ -185,12 +211,11 @@ void Player::ChengeOnGround(CollisionMapInfo& info) {
 			onGround_ = false;
 		}
 	} else {
-		if (info.isFloorCollision && worldTransform_.translation_.y <= CornerPosition(worldTransform_.translation_,kLeftBottom).y) {
+		if (info.isFloorCollision && worldTransform_.translation_.y <= CornerPosition(worldTransform_.translation_, kLeftBottom).y) {
 			onGround_ = true;
 			velocity_.x *= (1.0f - kAttenuation);
 			velocity_.y = 0;
 		}
-		
 	}
 }
 
@@ -232,7 +257,7 @@ void IsTopCollision(CollisionMapInfo& info, const WorldTransform& worldTransform
 
 		MapChipField::Rect rect = mapChipField->GetMapChipRectByIndex(indexSet.xIndex, indexSet.yIndex);
 		// 上に衝突した場合
-		info.movement.y = static_cast<float>(rect.bottom) -3 - kHeight;
+		info.movement.y = static_cast<float>(rect.bottom) - 3 - kHeight;
 		if (info.movement.y < 0) {
 			info.movement.y = 0;
 		}
@@ -270,7 +295,7 @@ void IsBottomCollision(CollisionMapInfo& info, const WorldTransform& worldTransf
 
 	if (hit) {
 		indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kLeftBottom]);
-		MapChipField::Rect rect = mapChipField->GetMapChipRectByIndex(indexSet.xIndex, indexSet.yIndex-1);
+		MapChipField::Rect rect = mapChipField->GetMapChipRectByIndex(indexSet.xIndex, indexSet.yIndex - 1);
 		info.movement.y = static_cast<float>(rect.top) + kHeight + 1;
 		if (info.movement.y > 0) {
 			info.movement.y = 0;
@@ -314,7 +339,7 @@ void IsRightCollision(CollisionMapInfo& info, const WorldTransform& worldTransfo
 		MapChipField::Rect rect = mapChipField->GetMapChipRectByIndex(indexSet.xIndex, indexSet.yIndex);
 
 		// 右方向の衝突処理
-		info.movement.x = static_cast<float>(rect.left)  -1; // 右方向
+		info.movement.x = static_cast<float>(rect.left) - 1; // 右方向
 		if (info.movement.x > 0) {
 			info.movement.x = 0;
 		}
@@ -334,7 +359,7 @@ void IsLeftCollision(CollisionMapInfo& info, const WorldTransform& worldTransfor
 	MapChipType mapChipType;
 	bool hit = false;
 	MapChipField::IndexSet indexSet;
-	positionsNew[kLeftTop].x -= 0.6f; // 左上の位置を少し下にずらす
+	positionsNew[kLeftTop].x -= 0.6f;    // 左上の位置を少し下にずらす
 	positionsNew[kLeftBottom].x -= 0.6f; // 左下の位置を少し下にずらす
 	// 左上のマップチップ判定
 	indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kLeftTop]);
@@ -356,7 +381,7 @@ void IsLeftCollision(CollisionMapInfo& info, const WorldTransform& worldTransfor
 
 		// 左方向の衝突処理
 		info.movement.x = static_cast<float>(rect.right) + 1; // 左方向
-		
+
 		if (info.movement.x > 0) {
 			info.movement.x = 0;
 		}

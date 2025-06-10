@@ -48,11 +48,21 @@ void GameScene::Initialize() {
 	// 敵キャラのモデルの生成
 	enemyModel_ = Model::CreateFromOBJ("Enemy", true);
 	// 敵キャラの初期座標を設定
-	KamataEngine::Vector3 enemyPosition = {10, 6, 0};
+	Vector3 enemyPosition2D = mapChipField_->GetMapChipPositionByIndex(5, 16);
+	enemyPosition2D.x *= kBlockWidth;
+	enemyPosition2D.y *= kBlockHeight;
+	KamataEngine::Vector3 enemyPosition = enemyPosition2D;
 	// 敵キャラの生成
-	enemy_ = new Enemy();
-	// 敵キャラの初期化
-	enemy_->Initialize(enemyPosition, enemyModel_);
+	for (int i = 0; i < 5; i++) {
+		Enemy* enemy = new Enemy();
+		// 敵キャラの初期化
+		enemy->Initialize(enemyPosition, enemyModel_);
+		// 敵キャラを敵リストに追加
+		enemies_.push_back(enemy);
+		// 敵キャラの初期座標をずらす
+		enemyPosition.x += 2.0f;
+	}
+	
 #pragma endregion
 
 	// カメラの初期化
@@ -72,7 +82,9 @@ GameScene::~GameScene() {
 	delete mapChipField_;
 	delete player_;
 	delete playerModel_;
-	delete enemy_;
+	for (Enemy* enemy : enemies_) {
+		delete enemy;
+	}
 	delete enemyModel_;
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -89,7 +101,9 @@ void GameScene::Update() {
 	cameraController_->Update();
 	player_->Update();
 	// 敵キャラの更新
-	enemy_->Update();
+	for (Enemy* enemy : enemies_) {
+		enemy->Update();
+	}
 #pragma region ブロック配置の更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -104,7 +118,7 @@ void GameScene::Update() {
 		}
 	}
 #pragma endregion
-
+	CheckALLCollision();
 #ifdef _DEBUG
 	// デバッグカメラの更新
 	debugCamera_->Update();
@@ -133,7 +147,9 @@ void GameScene::Draw() {
 	// 自キャラの描画
 	player_->Draw(&cameraController_->GetCamera());
 	// 敵キャラの描画
-	enemy_->Draw(&cameraController_->GetCamera());
+	for (Enemy* enemy : enemies_) {
+		enemy->Draw(&cameraController_->GetCamera());
+	}
 #ifdef _DEBUG
 	PrimitiveDrawer::GetInstance()->DrawLine3d({0, 0, 0}, {10, 0, 10}, {1.0f, 0.0f, 0.0f, 1.0f});
 #endif
@@ -173,5 +189,21 @@ void GameScene::GenerateBlock() {
 	scale_ = {0};
 	rotate_ = {0};
 	translate_ = {0};
+#pragma endregion
+}
+
+void GameScene::CheckALLCollision() {
+#pragma region 自キャラと敵キャラとの衝突判定
+	// 自キャラと敵キャラの衝突判定
+	AABB playerAABB = player_->GetAABB();
+	AABB enemyAABB;
+	for (Enemy* enemy : enemies_) {
+		enemyAABB = enemy->GetAABB();
+		if (IsCollisionAABBToAABB(playerAABB, enemyAABB)) {
+			// 衝突した場合の処理
+			player_->OnCollisionEnemy(enemy);
+			enemy->OnCollisionPlayer(player_);
+		}
+	}
 #pragma endregion
 }

@@ -1,7 +1,8 @@
 #include "Enemy.h"
 #include <numbers>
 #include "worldMatrix.h"
-
+#include "Player.h"
+using namespace KamataEngine;
 
 void Enemy::Initialize(const KamataEngine::Vector3& position, KamataEngine::Model* model) {
 	model_ = model;
@@ -35,3 +36,24 @@ void Enemy::Update() {
 void Enemy::Draw(const KamataEngine::Camera* camera) { model_->Draw(worldTransform_, *camera, 0, nullptr);
 
 }
+
+KamataEngine::Vector3 Enemy::GetWorldPosition() { 
+
+	Vector3 worldPosition;
+	worldPosition.x = worldTransform_.matWorld_.m[3][0];
+	worldPosition.y = worldTransform_.matWorld_.m[3][1];
+	worldPosition.z = worldTransform_.matWorld_.m[3][2];
+	return worldPosition;
+
+}
+
+AABB Enemy::GetAABB() {
+	// AABBの計算
+	AABB aabb;
+	Vector3 worldPosition = GetWorldPosition();
+	aabb.min = worldPosition - Vector3(0.4f, 0.4f, 0.4f);
+	aabb.max = worldPosition + Vector3(0.4f, 0.4f, 0.4f);
+	return aabb;
+}
+
+void Enemy::OnCollisionPlayer(Player* player) { (void)player; }

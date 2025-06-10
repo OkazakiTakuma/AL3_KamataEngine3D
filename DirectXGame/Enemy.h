@@ -2,7 +2,7 @@
 #include "KamataEngine.h"
 #include "Matrix.h"
 
-
+class Player; // 前方宣言
 class Enemy {
 public:
 	
@@ -10,6 +10,9 @@ public:
 	void Update();
 	void Draw(const KamataEngine::Camera* camera);
 
+	KamataEngine::Vector3 GetWorldPosition();
+	AABB GetAABB();
+	void OnCollisionPlayer(Player* player);
 
 private:
 	// ワールド変換データ
