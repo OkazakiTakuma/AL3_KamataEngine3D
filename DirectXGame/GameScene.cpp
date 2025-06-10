@@ -31,7 +31,7 @@ void GameScene::Initialize() {
 	tecstureHandle_ = TextureManager::Load("mario.jpg");
 	sprite_ = Sprite::Create(tecstureHandle_, {100, 50});
 	// 座標をマップチップ番号で指定
-	playerPosition_ = mapChipField_->GetMapChipPositionByIndex(2, 16);
+	playerPosition_ = mapChipField_->GetMapChipPositionByIndex(2, 17);
 	// プレイヤーの初期座標を設定
 	playerPosition_.x *= kBlockWidth;
 	playerPosition_.y *= kBlockHeight;
@@ -65,6 +65,14 @@ void GameScene::Initialize() {
 	
 #pragma endregion
 
+#pragma endregion
+#pragma region 死んだときのパーティクル
+	// 死んだときのパーティクルの初期化
+	// 死んだときのパーティクルの生成
+	deathParticles_ = new DeathParticles();
+	deathParticlesModel_ = Model::CreateFromOBJ("deathParticle", true);
+	deathParticles_->Initialize(playerPosition_, deathParticlesModel_);
+
 	// カメラの初期化
 	cameraController_ = new CameraController();
 	cameraController_->Initialize();
@@ -82,6 +90,10 @@ GameScene::~GameScene() {
 	delete mapChipField_;
 	delete player_;
 	delete playerModel_;
+
+	delete cameraController_;
+	delete deathParticles_;
+	delete deathParticlesModel_;
 	for (Enemy* enemy : enemies_) {
 		delete enemy;
 	}
@@ -103,6 +115,10 @@ void GameScene::Update() {
 	// 敵キャラの更新
 	for (Enemy* enemy : enemies_) {
 		enemy->Update();
+	}
+	// 死んだときのパーティクルの更新
+	if (deathParticles_) {
+		deathParticles_->Update();
 	}
 #pragma region ブロック配置の更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
@@ -149,6 +165,10 @@ void GameScene::Draw() {
 	// 敵キャラの描画
 	for (Enemy* enemy : enemies_) {
 		enemy->Draw(&cameraController_->GetCamera());
+	}
+	// 死んだときのパーティクルの描画
+	if (deathParticles_) {
+		deathParticles_->Draw(&cameraController_->GetCamera());
 	}
 #ifdef _DEBUG
 	PrimitiveDrawer::GetInstance()->DrawLine3d({0, 0, 0}, {10, 0, 10}, {1.0f, 0.0f, 0.0f, 1.0f});

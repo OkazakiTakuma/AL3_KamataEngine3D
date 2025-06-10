@@ -7,6 +7,7 @@
 #include "Skydome.h"
 #include "worldMatrix.h"
 #include "CameraController.h"
+#include "DeathParticles.h"
 #include <vector>
 
 class GameScene {
@@ -57,7 +58,11 @@ private:
 	std::list<Enemy*> enemies_;
 	// 敵キャラのモデル
 	KamataEngine::Model* enemyModel_ = nullptr;
-	// 敵キャラの初期座標
+	
+	// デスパーティクル
+	DeathParticles* deathParticles_ = nullptr;
+	// デスパーティクルのモデル
+	KamataEngine::Model* deathParticlesModel_ = nullptr;
 
 	void CheckALLCollision();
 };

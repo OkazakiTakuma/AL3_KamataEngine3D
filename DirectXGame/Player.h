@@ -39,7 +39,6 @@ public:
 	/// </summary>
 	/// <param name="model">モデル</param>
 	/// <param name="textureHandle">テクスチャーハンドル</param>
-	/// <param name="camera">カメラ</param>
 	void Initialize(const KamataEngine::Vector3& position, KamataEngine::Model* model);
 	/// <summary>
 	/// デストラクタ
