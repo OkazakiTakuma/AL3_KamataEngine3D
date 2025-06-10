@@ -1,18 +1,19 @@
 #pragma once
 #include<cmath>
+#include"KamataEngine.h"
 
-struct Vector3Matrix {
-	float x, y, z;
-};
 // 加算
-Vector3Matrix Add(const Vector3Matrix& v1, const Vector3Matrix& v2);
+KamataEngine::Vector3 Add(const KamataEngine::Vector3& v1, const KamataEngine::Vector3& v2);
+KamataEngine::Vector3 operator+(const KamataEngine::Vector3& v1, const KamataEngine::Vector3& v2);
 // 減算
-Vector3Matrix Subtract(const Vector3Matrix& v1, const Vector3Matrix& v2);
+KamataEngine::Vector3 Subtract(const KamataEngine::Vector3& v1, const KamataEngine::Vector3& v2);
+KamataEngine::Vector3 operator-(const KamataEngine::Vector3& v1, const KamataEngine::Vector3& v2);
+
 // スカラー倍
-Vector3Matrix Multiply(float scalar, const Vector3Matrix& v);
+KamataEngine::Vector3 Multiply(float scalar, const KamataEngine::Vector3& v);
 // 内積
-float Dot(const Vector3Matrix& v1, const Vector3Matrix& v2);
+float Dot(const KamataEngine::Vector3& v1, const KamataEngine::Vector3& v2);
 // 長さ (ノルム)
-float Length(const Vector3Matrix& v);
+float Length(const KamataEngine::Vector3& v);
 // 正規化
-Vector3Matrix Normalize(const Vector3Matrix& v);
+KamataEngine::Vector3 Normalize(const KamataEngine::Vector3& v);

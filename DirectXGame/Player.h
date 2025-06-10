@@ -31,6 +31,7 @@ struct CollisionMapInfo {
 };
 
 class MapChipField;
+class Enemy;
 class Player {
 public:
 	/// <summary>
@@ -53,6 +54,8 @@ public:
 	/// </summary>
 	void Draw(const KamataEngine::Camera* camera);
 
+	KamataEngine::Vector3 GetWorldPosition();
+	AABB GetAABB();
 	/// <summary>
 	/// ワールドトランスフォームを参照
 	/// </summary>
@@ -76,6 +79,8 @@ public:
 	void CollisionFloor(CollisionMapInfo& info);
 
 	void CollisionWall(CollisionMapInfo& info);
+
+	void OnCollisionEnemy(Enemy* enemy);
 
 private:
 	// ワールド変換データ
@@ -113,9 +118,9 @@ private:
 	// ジャンプ力
 	static inline const float kJumpPower = 0.4f;
 	//
-	Vector3Matrix scale_ = {0};
-	Vector3Matrix rotate_ = {0};
-	Vector3Matrix translate_ = {0};
+	KamataEngine::Vector3 scale_ = {0};
+	KamataEngine::Vector3 rotate_ = {0};
+	KamataEngine::Vector3 translate_ = {0};
 	MapChipField* mapChipField_ = nullptr;
 	// キャラクターの当たり判定の大きさ
 	static inline const float kBlank = 0.8f;

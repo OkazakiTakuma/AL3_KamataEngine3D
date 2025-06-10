@@ -36,9 +36,9 @@ private:
 
 	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransFormBlocks_;
 
-	Vector3Matrix scale_;
-	Vector3Matrix rotate_;
-	Vector3Matrix translate_;
+	KamataEngine::Vector3 scale_;
+	KamataEngine::Vector3 rotate_;
+	KamataEngine::Vector3 translate_;
 
 	// スカイドーム
 	Skydome* skydome_ = nullptr;
@@ -54,8 +54,10 @@ private:
 	Player* player_ = nullptr;
 	KamataEngine::Model* playerModel_ = nullptr;
 	// 敵キャラ
-	Enemy* enemy_ = nullptr;
+	std::list<Enemy*> enemies_;
 	// 敵キャラのモデル
 	KamataEngine::Model* enemyModel_ = nullptr;
 	// 敵キャラの初期座標
+
+	void CheckALLCollision();
 };
