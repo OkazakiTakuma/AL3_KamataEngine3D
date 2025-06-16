@@ -41,7 +41,7 @@ void GameScene::Initialize() {
 	playerModel_ = Model::CreateFromOBJ("player", true);
 	player_ = new Player();
 	// 自キャラの初期化
-	player_->Initialize(playerPosition_,playerModel_);
+	player_->Initialize(playerPosition_, playerModel_);
 	player_->SetMapChipField(mapChipField_);
 #pragma endregion
 #pragma region 敵キャラの初期化
@@ -62,7 +62,7 @@ void GameScene::Initialize() {
 		// 敵キャラの初期座標をずらす
 		enemyPosition.x += 2.0f;
 	}
-	
+
 #pragma endregion
 
 #pragma endregion
@@ -71,15 +71,13 @@ void GameScene::Initialize() {
 	// 死んだときのパーティクルの生成
 	deathParticles_ = new DeathParticles();
 	deathParticlesModel_ = Model::CreateFromOBJ("deathParticle", true);
-	deathParticles_->Initialize(playerPosition_, deathParticlesModel_);
 
 	// カメラの初期化
 	cameraController_ = new CameraController();
 	cameraController_->Initialize();
 	cameraController_->SetTarget(player_);
 	cameraController_->Reset();
-	cameraController_->SetMovableArea(Rect(25, 100,15, 100));
-
+	cameraController_->SetMovableArea(Rect(25, 100, 15, 100));
 }
 
 GameScene::~GameScene() {
@@ -102,39 +100,67 @@ GameScene::~GameScene() {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
 			delete worldTransformBlock;
 		}
-
-
 	}
 	worldTransFormBlocks_.clear();
 }
 
 void GameScene::Update() {
-	// 自キャラの更新
-	cameraController_->Update();
-	player_->Update();
-	// 敵キャラの更新
-	for (Enemy* enemy : enemies_) {
-		enemy->Update();
-	}
-	// 死んだときのパーティクルの更新
-	if (deathParticles_) {
-		deathParticles_->Update();
-	}
-#pragma region ブロック配置の更新
-	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
-		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
-			if (!worldTransformBlock) {
-				continue;
-			}
-
-
-
-			// ワールドトランスフォームの更新
-			WorldTransformUpdate(*worldTransformBlock);
+	switch (phase_) {
+	case GameScene::Phase::kPlay:
+		// 自キャラの更新
+		skydome_->Update();
+		player_->Update();
+		for (Enemy* enemy : enemies_) {
+			enemy->Update();
 		}
-	}
+		cameraController_->Update();
+		// 敵キャラの更新
+
+#pragma region ブロック配置の更新
+		for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
+			for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
+				if (!worldTransformBlock) {
+					continue;
+				}
+
+				// ワールドトランスフォームの更新
+				WorldTransformUpdate(*worldTransformBlock);
+			}
+		}
 #pragma endregion
-	CheckALLCollision();
+		CheckALLCollision();
+
+		break;
+	case GameScene::Phase::kDeath:
+		skydome_->Update();
+
+		// 死んだときのパーティクルの更新
+		if (deathParticles_) {
+			deathParticles_->Update();
+		}
+		for (Enemy* enemy : enemies_) {
+			enemy->Update();
+		}
+		cameraController_->Update();
+		// 敵キャラの更新
+
+#pragma region ブロック配置の更新
+		for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
+			for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
+				if (!worldTransformBlock) {
+					continue;
+				}
+
+				// ワールドトランスフォームの更新
+				WorldTransformUpdate(*worldTransformBlock);
+			}
+		}
+#pragma endregion
+		break;
+	default:
+		break;
+	}
+	ChangePhase();
 #ifdef _DEBUG
 	// デバッグカメラの更新
 	debugCamera_->Update();
@@ -157,17 +183,18 @@ void GameScene::Draw() {
 				continue;
 			}
 			model_->Draw(*worldTransformBlock, cameraController_->GetCamera());
-			
 		}
 	}
 	// 自キャラの描画
-	player_->Draw(&cameraController_->GetCamera());
+	if (!player_->IsDead()) {
+		player_->Draw(&cameraController_->GetCamera());
+	}
 	// 敵キャラの描画
 	for (Enemy* enemy : enemies_) {
 		enemy->Draw(&cameraController_->GetCamera());
 	}
 	// 死んだときのパーティクルの描画
-	if (deathParticles_) {
+	if (phase_ == Phase::kDeath) {
 		deathParticles_->Draw(&cameraController_->GetCamera());
 	}
 #ifdef _DEBUG
@@ -183,8 +210,6 @@ void GameScene::GenerateBlock() {
 	const uint32_t kNumBlockVertical = 20;
 	const uint32_t kNumBlockHorizontal = 100;
 
-	
-
 	// 要素数の変更
 	worldTransFormBlocks_.resize(kNumBlockVertical);
 
@@ -194,15 +219,14 @@ void GameScene::GenerateBlock() {
 	// 生成
 	for (uint32_t i = 0; i < kNumBlockVertical; i++) {
 		for (uint32_t j = 0; j < kNumBlockHorizontal; j++) {
-			if (mapChipField_->GetMapChipTypeIndex(j,i)==MapChipType::kBlock) {
+			if (mapChipField_->GetMapChipTypeIndex(j, i) == MapChipType::kBlock) {
 				// ワールドトランスフォームの生成
 				WorldTransform* worldTransForm = new WorldTransform();
 				worldTransForm->Initialize();
-				worldTransFormBlocks_[i][j]=worldTransForm;
-				worldTransFormBlocks_[i][j]->translation_=mapChipField_->GetMapChipPositionByIndex(j,i);
+				worldTransFormBlocks_[i][j] = worldTransForm;
+				worldTransFormBlocks_[i][j]->translation_ = mapChipField_->GetMapChipPositionByIndex(j, i);
 				worldTransFormBlocks_[i][j]->translation_.x *= kBlockWidth;
 				worldTransFormBlocks_[i][j]->translation_.y *= kBlockHeight;
-				
 			}
 		}
 	}
@@ -210,6 +234,26 @@ void GameScene::GenerateBlock() {
 	rotate_ = {0};
 	translate_ = {0};
 #pragma endregion
+}
+
+void GameScene::ChangePhase() {
+	switch (phase_) {
+	case GameScene::Phase::kPlay:
+		if (player_->IsDead()) {
+
+			phase_ = Phase::kDeath;
+			const Vector3& deathParticlePosition = player_->GetWorldPosition();
+			deathParticles_->Initialize(deathParticlePosition, deathParticlesModel_);
+		}
+		break;
+	case GameScene::Phase::kDeath:
+		if (deathParticles_ && deathParticles_->IsFinished()) {
+			finished_ = true;
+		}
+		break;
+	default:
+		break;
+	}
 }
 
 void GameScene::CheckALLCollision() {

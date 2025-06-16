@@ -12,16 +12,23 @@
 
 class GameScene {
 public:
+	enum class Phase{
+		kPlay, // ゲームプレイ
+		kDeath,// デス演出
+	};
 	void Initialize();
 	~GameScene();
 	void Update();
 	void Draw();
 	void GenerateBlock();
+	void ChangePhase();
+	bool IsFinished() const { return finished_; }
 
 private:
+	bool finished_=false;
 	const float kBlockWidth = 2.0f;
 	const float kBlockHeight = 2.0f;
-
+	Phase phase_;
 	// テクスチャーハンドル
 	uint32_t tecstureHandle_ = 0;
 	// スプライト

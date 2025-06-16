@@ -21,6 +21,7 @@ public:
 	/// 描画処理
 	/// </summary>
 	void Draw(const KamataEngine::Camera* camera);
+	bool IsFinished() const { return finished_; }
 
 private:
 	static inline const uint32_t kNumParticles = 8;                                       // パーティクルの数
@@ -30,7 +31,7 @@ private:
 	static inline const float kDuration = 1.0f;                                           // パーティクルの持続時間
 	static inline const float kSpeed = 0.1f;                                              // パーティクルの速度
 	static inline const float kAngkeunit = 2 * std::numbers::pi_v<float> / kNumParticles; // パーティクルの角度単位
-	bool isFInished_ = false;                                                             // パーティクルの終了フラグ
+	bool finished_ = false;                                                               // パーティクルの終了フラグ
 	float counter_ = 0.0f;                                                                // カウンター
 	KamataEngine::ObjectColor objectColor_;                                               // オブジェクトの色
 	KamataEngine::Vector4 color_;                                                         // パーティクルの色
