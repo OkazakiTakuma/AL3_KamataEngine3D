@@ -17,15 +17,15 @@ void DeathParticles::Initialize(const KamataEngine::Vector3& position, KamataEng
 void DeathParticles::Update() {
 	// パーティクルの更新処理
 
-	if (isFInished_) {
+	if (finished_) {
 		return; // パーティクルが終了している場合は更新しない
 	}
 
-	counter_ += 1.0f / 60.0f; // カウンターを更新
+	counter_ += 0.5f / 60.0f; // カウンターを更新
 	color_.w = std::clamp(1.0f - counter_ / kDuration, 0.0f, 1.0f); // アルファ値を減少させる
 	objectColor_.SetColor(color_);
 	if (counter_ >= kDuration) {
-		isFInished_ = true; // パーティクルの終了フラグを立てる
+	finished_ = true; // パーティクルの終了フラグを立てる
 	}
 	for (uint32_t i = 0; i < kNumParticles; ++i) {
 		
@@ -49,7 +49,7 @@ void DeathParticles::Update() {
 
 void DeathParticles::Draw(const KamataEngine::Camera* camera) {
 	// パーティクルの描画処理
-	if (isFInished_) {
+	if (finished_) {
 		return; // パーティクルが終了している場合は描画しない
 	}
 	for (const auto& worldTransform : worldTransform_) {

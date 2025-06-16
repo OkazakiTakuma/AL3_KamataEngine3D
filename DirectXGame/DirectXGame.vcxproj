@@ -115,6 +115,7 @@
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Skydome.cpp" />
+    <ClCompile Include="TitleScene.cpp" />
     <ClCompile Include="Vector.cpp" />
     <ClCompile Include="worldMatrix.cpp" />
   </ItemGroup>
@@ -202,6 +203,7 @@
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Skydome.h" />
+    <ClInclude Include="TitleScene.h" />
     <ClInclude Include="Vector.h" />
     <ClInclude Include="worldMatrix.h" />
   </ItemGroup>

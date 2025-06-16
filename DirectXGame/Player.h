@@ -81,6 +81,8 @@ public:
 
 	void OnCollisionEnemy(Enemy* enemy);
 
+	bool IsDead() const { return isDead_; }
+
 private:
 	// ワールド変換データ
 	KamataEngine::WorldTransform worldTransform_;
@@ -90,6 +92,8 @@ private:
 	uint32_t textstureHandle_ = 0u;
 	// カメラ
 	const KamataEngine::Camera* camera_ = nullptr;
+	// 生きているか
+	bool isDead_ = false;
 	// プレイヤーの初期速度
 	KamataEngine::Vector3 velocity_ = {0, 0, 0};
 	// プレイヤーの移動速度
