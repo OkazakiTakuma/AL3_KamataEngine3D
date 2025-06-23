@@ -9,12 +9,15 @@
 #include "CameraController.h"
 #include "DeathParticles.h"
 #include <vector>
+#include "Fade.h"
 
 class GameScene {
 public:
 	enum class Phase{
+		kFadeIn,
 		kPlay, // ゲームプレイ
 		kDeath,// デス演出
+		kFadeOut
 	};
 	void Initialize();
 	~GameScene();
@@ -28,7 +31,8 @@ private:
 	bool finished_=false;
 	const float kBlockWidth = 2.0f;
 	const float kBlockHeight = 2.0f;
-	Phase phase_;
+	Fade* fade_ = nullptr;
+	Phase phase_ = Phase::kFadeIn;
 	// テクスチャーハンドル
 	uint32_t tecstureHandle_ = 0;
 	// スプライト
