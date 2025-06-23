@@ -2,12 +2,20 @@
 #include <KamataEngine.h>
 #include"Matrix.h"
 #include"worldMatrix.h"
+#include"Fade.h"
 
 /// <summary>
 /// タイトルシーン
 /// </summary>
 class TitleScene {
 public:
+	enum Phase {
+		kFadeIn,
+		kMain,
+		kFadeOut,
+
+	};
+	~TitleScene();
 	void Initialize();
 	void Update();
 	void Draw();
@@ -20,4 +28,6 @@ private:
 	KamataEngine::Camera camera_;
 	float timer_ = 0.0f;
 	float addtimer = 1.0f / 60.0f;
+	Fade* fade_ = nullptr;
+	Phase phase_ = Phase::kMain;
 };

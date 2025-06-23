@@ -78,6 +78,11 @@ void GameScene::Initialize() {
 	cameraController_->SetTarget(player_);
 	cameraController_->Reset();
 	cameraController_->SetMovableArea(Rect(25, 100, 15, 100));
+#pragma endregion
+	fade_ = new Fade();
+	fade_->Initialize();
+	fade_->Start(Fade::FadeIn, 1.0f);
+	phase_ = Phase::kFadeIn;
 }
 
 GameScene::~GameScene() {
@@ -106,6 +111,30 @@ GameScene::~GameScene() {
 
 void GameScene::Update() {
 	switch (phase_) {
+
+	case GameScene::Phase::kFadeIn:
+		cameraController_->Update();
+
+		skydome_->Update();
+		fade_->Update();
+		if (fade_->IsFinished()) {
+
+			phase_ = Phase::kPlay;
+		}
+#pragma region ブロック配置の更新
+		for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
+			for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
+				if (!worldTransformBlock) {
+					continue;
+				}
+
+				// ワールドトランスフォームの更新
+				WorldTransformUpdate(*worldTransformBlock);
+			}
+		}
+#pragma endregion
+
+		break;
 	case GameScene::Phase::kPlay:
 		// 自キャラの更新
 		skydome_->Update();
@@ -157,6 +186,27 @@ void GameScene::Update() {
 		}
 #pragma endregion
 		break;
+	case GameScene::Phase::kFadeOut:
+		skydome_->Update();
+		fade_->Update();
+		if (fade_->IsFinished()) {
+			finished_ = true;
+			return;
+		}
+#pragma region ブロック配置の更新
+		for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
+			for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
+				if (!worldTransformBlock) {
+					continue;
+				}
+
+				// ワールドトランスフォームの更新
+				WorldTransformUpdate(*worldTransformBlock);
+			}
+		}
+#pragma endregion
+
+		break;
 	default:
 		break;
 	}
@@ -174,6 +224,7 @@ void GameScene::Draw() {
 
 	// 3Dモデルの描画
 	Model::PreDraw(dxCommon->GetCommandList());
+
 	// スカイドームの描画
 	skydome_->Draw();
 	// スプライトの描画
@@ -196,6 +247,11 @@ void GameScene::Draw() {
 	// 死んだときのパーティクルの描画
 	if (phase_ == Phase::kDeath) {
 		deathParticles_->Draw(&cameraController_->GetCamera());
+	}
+	if (Phase::kFadeIn == phase_ || Phase::kFadeOut == phase_) {
+		// フェードイン・アウト中はモデルを描画しない
+		fade_->Draw();
+		return;
 	}
 #ifdef _DEBUG
 	PrimitiveDrawer::GetInstance()->DrawLine3d({0, 0, 0}, {10, 0, 10}, {1.0f, 0.0f, 0.0f, 1.0f});
@@ -238,6 +294,7 @@ void GameScene::GenerateBlock() {
 
 void GameScene::ChangePhase() {
 	switch (phase_) {
+
 	case GameScene::Phase::kPlay:
 		if (player_->IsDead()) {
 
@@ -248,7 +305,8 @@ void GameScene::ChangePhase() {
 		break;
 	case GameScene::Phase::kDeath:
 		if (deathParticles_ && deathParticles_->IsFinished()) {
-			finished_ = true;
+			fade_->Start(Fade::FadeOut, 1.0f);
+			phase_=Phase::kFadeOut;
 		}
 		break;
 	default:
