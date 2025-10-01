@@ -114,6 +114,8 @@ private:
 
 	// 接地状態フラグ
 	bool onGround_ = false;
+	// 二段ジャンプ
+	bool isSkyJump_ = false;
 	// 重力加速度(下)
 	static inline const float kGravityAccleration = 0.01f;
 	// 最大落下速度

@@ -120,59 +120,66 @@ void Player::OnCollisionEnemy(Enemy* enemy) {
 
 void Player::KeyMove() {
 	// 接地状態の時
-	if (onGround_) {
-
-		// 左右移動
+	// 左右移動
 #pragma region 左右移動
-		if (Input::GetInstance()->PushKey(DIK_RIGHT) || Input::GetInstance()->PushKey(DIK_LEFT)) {
+	if (Input::GetInstance()->PushKey(DIK_RIGHT) || Input::GetInstance()->PushKey(DIK_LEFT) || Input::GetInstance()->PushKey(DIK_A) || Input::GetInstance()->PushKey(DIK_D)) {
 
-			if (Input::GetInstance()->PushKey(DIK_RIGHT)) {
-				// 左移動中はブレーキ
-				if (velocity_.x < 0) {
-					acceleration_.x = 0;
-					velocity_.x *= (1.0f - kAttenuation);
-				}
-				acceleration_.x += kAcceleration;
-
-				// 向きを変える
-				if (lrDirection_ != LRDirection::kRight) {
-					lrDirection_ = LRDirection::kRight;
-					// 旋回開始
-					turnFirstRotationY_ = worldTransform_.rotation_.y;
-					turnTimer_ = kTimeturn;
-				}
-			} else if (Input::GetInstance()->PushKey(DIK_LEFT)) {
-				// 右移動中はブレーキ
-				if (velocity_.x > 0) {
-					acceleration_.x = 0;
-					velocity_.x *= (1.0f - kAttenuation);
-				}
-				acceleration_.x -= kAcceleration;
-				// 向きを変える
-				if (lrDirection_ != LRDirection::kLeft) {
-					lrDirection_ = LRDirection::kLeft;
-					// 旋回開始
-					turnFirstRotationY_ = worldTransform_.rotation_.y;
-					turnTimer_ = kTimeturn;
-				}
+		if (Input::GetInstance()->PushKey(DIK_RIGHT) || Input::GetInstance()->PushKey(DIK_D)) {
+			// 左移動中はブレーキ
+			if (velocity_.x < 0) {
+				acceleration_.x = 0;
+				velocity_.x *= (1.0f - kAttenuation);
 			}
-			velocity_.x += acceleration_.x;
-			// 速度の制限
-			velocity_.x = std::clamp(velocity_.x, -kLimitRunspeed, kLimitRunspeed);
+			acceleration_.x += kAcceleration;
 
-		} else {
-			// 速度が減速する
-			velocity_.x *= (1.0f - kAttenuation);
+			// 向きを変える
+			if (lrDirection_ != LRDirection::kRight) {
+				lrDirection_ = LRDirection::kRight;
+				// 旋回開始
+				turnFirstRotationY_ = worldTransform_.rotation_.y;
+				turnTimer_ = kTimeturn;
+			}
+		} else if (Input::GetInstance()->PushKey(DIK_LEFT) || Input::GetInstance()->PushKey(DIK_A)) {
+			// 右移動中はブレーキ
+			if (velocity_.x > 0) {
+				acceleration_.x = 0;
+				velocity_.x *= (1.0f - kAttenuation);
+			}
+			acceleration_.x -= kAcceleration;
+			// 向きを変える
+			if (lrDirection_ != LRDirection::kLeft) {
+				lrDirection_ = LRDirection::kLeft;
+				// 旋回開始
+				turnFirstRotationY_ = worldTransform_.rotation_.y;
+				turnTimer_ = kTimeturn;
+			}
 		}
+		velocity_.x += acceleration_.x;
+		// 速度の制限
+		velocity_.x = std::clamp(velocity_.x, -kLimitRunspeed, kLimitRunspeed);
+
+	} else {
+		// 速度が減速する
+		velocity_.x *= (1.0f - kAttenuation);
+	}
 #pragma endregion
+	if (onGround_) {
+		isSkyJump_ = true;
+
 		// ジャンプ
 #pragma region ジャンプ
-		if (Input::GetInstance()->PushKey(DIK_UP)) {
+		if (Input::GetInstance()->TriggerKey(DIK_UP) || Input::GetInstance()->TriggerKey(DIK_SPACE) || Input::GetInstance()->TriggerKey(DIK_W)) {
+			velocity_.y = 0.0f;
 			velocity_.y += kJumpPower;
 			onGround_ = false;
 		}
 	} else {
-
+		if (isSkyJump_ == true) {
+			if (Input::GetInstance()->TriggerKey(DIK_UP) || Input::GetInstance()->TriggerKey(DIK_SPACE) || Input::GetInstance()->TriggerKey(DIK_W)) {
+				velocity_.y += kJumpPower;
+				isSkyJump_ = false;
+			}
+		}
 		// 空中にいる時に
 		// 重力をかける
 		velocity_.y -= kGravityAccleration;
