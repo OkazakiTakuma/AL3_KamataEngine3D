@@ -12,22 +12,28 @@ enum class LRDirection {
 	kRight,
 	kLeft,
 };
-static inline const float kWidth = 0.8f*2;
-static inline const float kHeight = 0.8f*2;
+static inline const float kWidth = 0.8f * 2;
+static inline const float kHeight = 0.8f * 2;
 enum Corner {
 	kRightBottom, // 右下
 	kLeftBottom,  // 左下
 	kRightTop,    // 右上
 	kLeftTop,     // 左上
 
-	kNumCorner	  // 要素数
+	kNumCorner // 要素数
+};
+
+enum class Behavior {
+	kRoot,   // 通常状態
+	kAttack, // 攻撃中
+	kNull    // リクエストなし
 };
 
 struct CollisionMapInfo {
 	bool isCeilingCollision = false;
 	bool isFloorCollision = false;
 	bool isWallCollision = false;
-	KamataEngine::Vector3 movement;
+	KamataEngine::Vector3 movement = {0, 0, 0};
 };
 
 class MapChipField;
@@ -52,6 +58,24 @@ public:
 	/// 描画処理
 	/// </summary>
 	void Draw(const KamataEngine::Camera* camera);
+
+	/// 通常行動初期化
+	void BehaviorRootInitialize();
+
+	/// 通常行動更新
+	void BehaviorRootUpdate();
+
+	/// 攻撃行動初期化
+	void BehaviorAttackInitialize();
+
+	/// 攻撃行動更新
+	void BehaviorAttackUpdate();
+
+	void SetTargetWorldPosition(const KamataEngine::Vector3& targetWorldPotion);
+
+	float GetMaxAttackRange();
+
+	bool GetIsAttack();
 
 	KamataEngine::Vector3 GetWorldPosition();
 	AABB GetAABB();
@@ -116,6 +140,8 @@ private:
 	bool onGround_ = false;
 	// 二段ジャンプ
 	bool isSkyJump_ = false;
+	// 攻撃してるか
+	bool isAttack_ = false;
 	// 重力加速度(下)
 	static inline const float kGravityAccleration = 0.01f;
 	// 最大落下速度
@@ -133,7 +159,12 @@ private:
 	void KeyMove();
 	void ChengeOnGround(CollisionMapInfo& info);
 	const float kOverGround = 0.6f; // 接地判定のオーバーグラウンド
-} ;
+
+	Behavior behavior_ = Behavior::kRoot;
+	Behavior behaviorRequest_ = Behavior::kNull;
+	float maxAttackRange = 10;
+	KamataEngine::Vector3 targetWorldPotion_ = {0};
+};
 void IsMapCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform, MapChipField* mapChipField);
 void IsTopCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform_, MapChipField* mapChipField);
 void IsBottomCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform_, MapChipField* mapChipField);
@@ -141,4 +172,4 @@ void IsBottomCollision(CollisionMapInfo& info, const KamataEngine::WorldTransfor
 void IsRightCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform_, MapChipField* mapChipField);
 void IsLeftCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform_, MapChipField* mapChipField);
 
-	KamataEngine::Vector3 CornerPosition(const KamataEngine::Vector3& centor, Corner corner);
+KamataEngine::Vector3 CornerPosition(const KamataEngine::Vector3& centor, Corner corner);

@@ -306,7 +306,7 @@ void GameScene::ChangePhase() {
 	case GameScene::Phase::kDeath:
 		if (deathParticles_ && deathParticles_->IsFinished()) {
 			fade_->Start(Fade::FadeOut, 1.0f);
-			phase_=Phase::kFadeOut;
+			phase_ = Phase::kFadeOut;
 		}
 		break;
 	default:
@@ -325,6 +325,27 @@ void GameScene::CheckALLCollision() {
 			// 衝突した場合の処理
 			player_->OnCollisionEnemy(enemy);
 			enemy->OnCollisionPlayer(player_);
+		}
+	}
+#pragma endregion
+
+#pragma region 自キャラの攻撃範囲に敵キャラがいるかどうか
+	if (player_->GetIsAttack() == true) {
+
+		for (int i = 0; i < static_cast<int>(player_->GetMaxAttackRange()); i++) {
+			AABB attackRange;
+			Vector3 worldPosition = player_->GetWorldPosition();
+			worldPosition.y *= 2;
+			attackRange.min = worldPosition - Vector3(static_cast<float>(i), static_cast<float>(i), kWidth / 2);
+			attackRange.max = worldPosition + Vector3(static_cast<float>(i), static_cast<float>(i), kWidth / 2);
+			for (Enemy* enemy : enemies_) {
+				enemyAABB = enemy->GetAABB();
+				if (IsCollisionAABBToAABB(attackRange, enemyAABB)) {
+					player_->SetTargetWorldPosition(enemy->GetWorldPosition());
+					delete enemy;
+					break;
+				}
+			}
 		}
 	}
 #pragma endregion

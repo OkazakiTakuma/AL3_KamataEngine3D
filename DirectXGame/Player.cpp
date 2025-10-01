@@ -18,6 +18,44 @@ Player::~Player() {}
 
 void Player::Update() {
 	// プレイヤーの移動
+	if (behaviorRequest_ != Behavior::kNull) {
+		behavior_ = behaviorRequest_;
+		switch (behavior_) {
+		case Behavior::kRoot:
+		default:
+			BehaviorRootInitialize();
+			break;
+		case Behavior::kAttack:
+			BehaviorAttackInitialize();
+			break;
+		}
+		behaviorRequest_ = Behavior::kNull;
+	}
+
+	switch (behavior_) {
+	case Behavior::kRoot:
+	default:
+		BehaviorRootUpdate();
+		break;
+	case Behavior::kAttack:
+		BehaviorAttackUpdate();
+		break;
+	}
+
+	WorldTransformUpdate(worldTransform_);
+}
+
+void Player::Draw(const Camera* camera) {
+	// 3Dモデルを描画
+	model_->Draw(worldTransform_, *camera, textstureHandle_, nullptr);
+}
+
+void Player::BehaviorRootInitialize() {}
+
+void Player::BehaviorRootUpdate() {
+	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
+		behaviorRequest_ = Behavior::kAttack;
+	}
 	KeyMove();
 	CollisionMapInfo collisionMapInfo;
 	collisionMapInfo.movement = velocity_;
@@ -54,13 +92,21 @@ void Player::Update() {
 	// 接地状態の時
 
 	// ワールドトランスフォームの更新
-	WorldTransformUpdate(worldTransform_);
 }
 
-void Player::Draw(const Camera* camera) {
-	// 3Dモデルを描画
-	model_->Draw(worldTransform_, *camera, textstureHandle_, nullptr);
+void Player::BehaviorAttackInitialize() {}
+
+void Player::BehaviorAttackUpdate() {
+	isAttack_ = true;
+	behaviorRequest_ = Behavior::kRoot;
 }
+
+void Player::SetTargetWorldPosition(const KamataEngine::Vector3& targetWorldPotion) { targetWorldPotion_ = targetWorldPotion; }
+
+
+float Player::GetMaxAttackRange() { return maxAttackRange; }
+
+bool Player::GetIsAttack() { return isAttack_; }
 
 Vector3 Player::GetWorldPosition() {
 	Vector3 worldPosition;
@@ -168,14 +214,14 @@ void Player::KeyMove() {
 
 		// ジャンプ
 #pragma region ジャンプ
-		if (Input::GetInstance()->TriggerKey(DIK_UP) || Input::GetInstance()->TriggerKey(DIK_SPACE) || Input::GetInstance()->TriggerKey(DIK_W)) {
+		if (Input::GetInstance()->TriggerKey(DIK_UP) || Input::GetInstance()->TriggerKey(DIK_W)) {
 			velocity_.y = 0.0f;
 			velocity_.y += kJumpPower;
 			onGround_ = false;
 		}
 	} else {
 		if (isSkyJump_ == true) {
-			if (Input::GetInstance()->TriggerKey(DIK_UP) || Input::GetInstance()->TriggerKey(DIK_SPACE) || Input::GetInstance()->TriggerKey(DIK_W)) {
+			if (Input::GetInstance()->TriggerKey(DIK_UP) || Input::GetInstance()->TriggerKey(DIK_W)) {
 				velocity_.y += kJumpPower;
 				isSkyJump_ = false;
 			}

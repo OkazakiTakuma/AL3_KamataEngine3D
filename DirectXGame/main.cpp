@@ -8,11 +8,11 @@ TitleScene* titleScene = nullptr;
 GameScene* gameScene = nullptr;
 
 enum Scene {
-	kUnknown = 0,
+	kNull,
 	kTitle,
 	kGame,
 };
-Scene scene = Scene::kUnknown;
+Scene scene = Scene::kNull;
 void ChangeScene();
 void UpdateScene();
 void DrawScene();
@@ -59,7 +59,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 }
 void ChangeScene() {
 	switch (scene) {
-	case kUnknown:
+	case kNull:
 		break;
 	case kTitle:
 		if (titleScene->IsFinished()) {
@@ -86,7 +86,7 @@ void ChangeScene() {
 
 void UpdateScene() {
 	switch (scene) {
-	case kUnknown:
+	case kNull:
 		break;
 	case kTitle:
 		// タイトルシーンの更新処理
@@ -102,7 +102,7 @@ void UpdateScene() {
 }
 void DrawScene() {
 	switch (scene) {
-	case kUnknown:
+	case kNull:
 		break;
 	case kTitle:
 		// タイトルシーンの描画処理
