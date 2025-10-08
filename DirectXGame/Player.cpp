@@ -98,11 +98,25 @@ void Player::BehaviorAttackInitialize() {}
 
 void Player::BehaviorAttackUpdate() {
 	isAttack_ = true;
-	behaviorRequest_ = Behavior::kRoot;
+	if (isAttackHit_ == true) {
+		// 攻撃がヒットした場合
+		isAttackHit_ = false;
+		AttackHitUpdate();
+		return;
+
+	} else {
+		behaviorRequest_ = Behavior::kRoot;
+	}
+}
+
+void Player::AttackHitUpdate() {
+	// ターゲットに向けて線を引く
+	//PrimitiveDrawer::GetInstance()->DrawLine3d({worldTransform_.matWorld_.m[3][0], worldTransform_.matWorld_.m[3][1], worldTransform_.matWorld_.m[3][2]}, targetWorldPotion_, {1.0f, 0.0f, 0.0f, 1.0f});
+	
+
 }
 
 void Player::SetTargetWorldPosition(const KamataEngine::Vector3& targetWorldPotion) { targetWorldPotion_ = targetWorldPotion; }
-
 
 float Player::GetMaxAttackRange() { return maxAttackRange; }
 

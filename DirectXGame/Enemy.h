@@ -13,6 +13,7 @@ public:
 	KamataEngine::Vector3 GetWorldPosition();
 	AABB GetAABB();
 	void OnCollisionPlayer(Player* player);
+	bool GetIsDead();
 
 private:
 	// ワールド変換データ
@@ -25,4 +26,5 @@ private:
 	static inline const float kWorkMotionAngleEnd = 3.14f;  // 敵キャラのワークモーション終了角度
 	static inline const float kWarlMotionTime = 1.0f;       // 敵キャラのワークモーション時間
 	float warkTimer_ = 0.0f;                                // 敵キャラのワークモーションタイマー
+	bool isDead_ = false;
 };

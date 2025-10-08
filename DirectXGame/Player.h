@@ -2,6 +2,7 @@
 #pragma once
 #include "KamataEngine.h"
 #include "Matrix.h"
+#include "Screen.h"
 #include "worldMatrix.h"
 #include <algorithm>
 #include <assert.h>
@@ -71,11 +72,17 @@ public:
 	/// 攻撃行動更新
 	void BehaviorAttackUpdate();
 
+	void AttackHitUpdate();
+
 	void SetTargetWorldPosition(const KamataEngine::Vector3& targetWorldPotion);
 
 	float GetMaxAttackRange();
 
 	bool GetIsAttack();
+
+	void SetIsAttack(bool isAttack) { isAttack_ = isAttack; }
+
+	void SetIsAttackHit(bool isAttackHit) { isAttackHit_ = isAttackHit; }
 
 	KamataEngine::Vector3 GetWorldPosition();
 	AABB GetAABB();
@@ -164,6 +171,8 @@ private:
 	Behavior behaviorRequest_ = Behavior::kNull;
 	float maxAttackRange = 10;
 	KamataEngine::Vector3 targetWorldPotion_ = {0};
+
+	bool isAttackHit_ = false;
 };
 void IsMapCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform, MapChipField* mapChipField);
 void IsTopCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform_, MapChipField* mapChipField);

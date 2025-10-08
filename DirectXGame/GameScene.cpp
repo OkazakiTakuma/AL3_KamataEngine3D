@@ -139,9 +139,18 @@ void GameScene::Update() {
 		// 自キャラの更新
 		skydome_->Update();
 		player_->Update();
+
+		// 敵キャラの更新
 		for (Enemy* enemy : enemies_) {
 			enemy->Update();
 		}
+		enemies_.remove_if([](Enemy* enemy) {
+			if (enemy->GetIsDead()) {
+				delete enemy;
+				return true;
+			}
+			return false;
+		});
 		cameraController_->Update();
 		// 敵キャラの更新
 
@@ -342,10 +351,12 @@ void GameScene::CheckALLCollision() {
 				enemyAABB = enemy->GetAABB();
 				if (IsCollisionAABBToAABB(attackRange, enemyAABB)) {
 					player_->SetTargetWorldPosition(enemy->GetWorldPosition());
-					delete enemy;
+					player_->SetIsAttackHit(true);
+					
 					break;
 				}
 			}
+			
 		}
 	}
 #pragma endregion
