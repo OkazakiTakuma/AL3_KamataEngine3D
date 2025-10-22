@@ -1,63 +1,108 @@
 #include "TitleScene.h"
-using namespace KamataEngine;
-
-TitleScene::~TitleScene() {
-	delete titleModel_;
-	delete fade_;
-}
 
 void TitleScene::Initialize() {
-	titleModel_ = Model::CreateFromOBJ("title", true);
+	// 初期化処理
+	// ここではタイトルシーンの初期化を行います。
+	// 例えば、背景画像の読み込みやタイトルテキストの設定などを行います。
+
+
+	titleModel_ = KamataEngine::Model::CreateFromOBJ("title", true);
+	playerModel_ = KamataEngine::Model::CreateFromOBJ("player", true);
+	
+	playerTextureHandle_ = KamataEngine::TextureManager::Load("sample.png"); // プレイヤー用のテクスチャハンドル
+
+	titlePosition_ = {-14.0f, 12.0f, 0.0f}; // タイトルの位置
+
+	attackModel_ = KamataEngine::Model::CreateFromOBJ("attak", true); // 攻撃用のモデル
+
+	// カメラの生成（←これが重要！）
+	camera_ = new KamataEngine::Camera();
+	camera_->Initialize(); // ← これが必須！
+
 	worldTransform_.Initialize();
-	camera_.Initialize();
-	camera_.translation_.z = -10;
-	camera_.UpdateMatrix();
+
+	title_ = new Title();
+
+	title_->Initialize(titleModel_,  camera_, titlePosition_);
+
+	player_ = new Player();
+	player_->Initialize(playerModel_, playerTextureHandle_ ,attackModel_,camera_, playerPosition_);
+
 	fade_ = new Fade();
-	fade_->Initialize();
-	fade_->Start(Fade::FadeIn, 1.0f);
-	phase_ = Phase::kFadeIn;
+	fade_->Initialize(); // フェードの初期化
+	fade_->Start(Fade::Status::FadeIn, duration_);
+
+}
+
+TitleScene::~TitleScene() {
+	// デストラクタでリソースを解放
+	delete title_;
+	delete player_;
+	delete camera_; // カメラの解放
+	if (titleModel_) {
+		delete titleModel_;
+	}
+	if (playerModel_) {
+		delete playerModel_;
+	}
+	delete fade_; // フェードの解放
 }
 
 void TitleScene::Update() {
-	if (phase_ != Phase::kMain) {
-		fade_->Update();
+	fade_->Update(); // フェードの更新処理
+
+	switch (phase_) {
+	case Phase::kFadeIn:
+		title_->Update();
+		player_->TitleUpdata();
 		if (fade_->IsFinished()) {
-			if (phase_ == Phase::kFadeOut) {
-				finished_ = true;
-				return;
-			}
+			// フェードイン終了判定
 			phase_ = Phase::kMain;
 		}
-	} else {
-#pragma region シーン移行
-		if (Input::GetInstance()->PushKey(DIK_SPACE)) {
-			phase_ = Phase::kFadeOut;
-			fade_->Start(Fade::FadeOut, 1.0f);
+		break;
 
-			// シーン移行のロジックをここに記述
+	case Phase::kMain:
+		title_->Update();
+		player_->TitleUpdata();
+
+		// スペースキーを押したらフェードアウト開始
+		if (KamataEngine::Input::GetInstance()->PushKey(DIK_SPACE)) {
+			fade_->Start(Fade::Status::FadeOut, duration_);
+			phase_ = Phase::kFadeOut;
 		}
-		timer_ += addtimer;
-		if (timer_ > 1.0f) {
-			addtimer *= -1;
+		break;
+
+	case Phase::kFadeOut:
+		title_->Update();
+		player_->TitleUpdata();
+		if (fade_->IsFinished()) {
+			finished_ = true;
 		}
-		if (timer_ < 0.0f) {
-			addtimer *= -1;
-		}
-		worldTransform_.translation_ = Leap(Vector3(0, 0, 0), Vector3(0, 1, 0), timer_);
-		WorldTransformUpdate(worldTransform_);
-#pragma endregion
+		break;
+
 	}
 }
 
 void TitleScene::Draw() {
-	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
-	// 3Dモデルの描画
-	Model::PreDraw(dxCommon->GetCommandList());
-	titleModel_->Draw(worldTransform_, camera_);
-	Model::PostDraw();
-	if (phase_ != Phase::kMain) {
 
-		fade_->Draw();
+  KamataEngine::DirectXCommon* dxCommon = KamataEngine::DirectXCommon::GetInstance();
+
+	KamataEngine::Model::PreDraw(dxCommon->GetCommandList());
+
+	// タイトルモデルの描画
+	if (title_) {
+		title_->Draw();
 	}
+
+	
+		player_->Draw(); // プレイヤーの描画処理
+	
+
+	KamataEngine::Model::PostDraw();
+
+	fade_->Draw(); // フェードの描画処理
+
+
 }
+

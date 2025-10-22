@@ -1,79 +1,142 @@
 #pragma once
 #include "KamataEngine.h"
-#include "MapChipFIeld.h"
-#include "Matrix.h"
 #include "Player.h"
 #include "Enemy.h"
 #include "Skydome.h"
-#include "worldMatrix.h"
-#include "CameraController.h"
-#include "DeathParticles.h"
 #include <vector>
+#include "MapChipFiled.h"
+#include "CameraController.h"
+#include "Enemy.h"
+#include "AABB.h"
+#include "DethParticles.h"
 #include "Fade.h"
+#include "HitEffect.h"
 
+enum class Phase { 
+	kFadeIn, 
+	kPlay, 
+	kDeath,
+	kFadeOut
+};
+
+
+
+// ゲームシーン
 class GameScene {
-public:
-	enum class Phase{
-		kFadeIn,
-		kPlay, // ゲームプレイ
-		kDeath,// デス演出
-		kFadeOut
-	};
-	void Initialize();
-	~GameScene();
-	void Update();
-	void Draw();
-	void GenerateBlock();
-	void ChangePhase();
-	bool IsFinished() const { return finished_; }
 
-private:
-	bool finished_=false;
-	const float kBlockWidth = 2.0f;
-	const float kBlockHeight = 2.0f;
-	Fade* fade_ = nullptr;
-	Phase phase_ = Phase::kFadeIn;
-	// テクスチャーハンドル
-	uint32_t tecstureHandle_ = 0;
+public:
+
+
+	// 初期化
+ain
+	void Initialize();
+
+	// デストラクタ
+	~GameScene();
+
+	// 更新
+	void Update();
+
+	// 描画
+	void Draw();
+
+
+	void GenerateBlocks();
+
+	//全ての当たり判定を行う
+	void CheckAllCollisions();
+
+	void ChangePhase();
+
+	void CreateHitEffect(KamataEngine::Vector3& spawnPosition);
+
+
 	// スプライト
 	KamataEngine::Sprite* sprite_ = nullptr;
+	KamataEngine::Sprite* playerSprite_ = nullptr;
+
 	// 3Dモデル
-	KamataEngine::Model* model_ = nullptr;
+	KamataEngine::Model* playerModel_ = nullptr;
+	KamataEngine::Model* enemyModel_ = nullptr;
+	KamataEngine::Model* attackModel_ = nullptr; 
+	// ブロックモデル
+	KamataEngine::Model* modelBlock_ = nullptr;
+	//パーティクル
+	KamataEngine::Model* modelParticle_ = nullptr;
+	//ヒットエフェクト用のモデル
+	KamataEngine::Model* hitEffectModel_ = nullptr;
+
+	//テクスチャハンドル
+	uint32_t dethTextureHandle_ = 0; // テクスチャハンドル
+
 	// ワールドトランスフォーム
 	KamataEngine::WorldTransform worldTransform_;
+
 	// カメラ
 	KamataEngine::Camera camera_;
+
 	// デバッグカメラ
 	KamataEngine::DebugCamera* debugCamera_ = nullptr;
 
-	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransFormBlocks_;
 
-	KamataEngine::Vector3 scale_;
-	KamataEngine::Vector3 rotate_;
-	KamataEngine::Vector3 translate_;
-
-	// スカイドーム
-	Skydome* skydome_ = nullptr;
-	// マップチップフィールド
-	MapChipField* mapChipField_ = nullptr;
-	// カメラコントローラー
-	CameraController* cameraController_ = nullptr;
-	/// プレイヤー
-
-	// プレイヤーの初期座標
-	KamataEngine::Vector3 playerPosition_ = {0, 0, 0};
-	// 自キャラ
 	Player* player_ = nullptr;
-	KamataEngine::Model* playerModel_ = nullptr;
-	// 敵キャラ
+	//リスト
 	std::list<Enemy*> enemies_;
-	// 敵キャラのモデル
-	KamataEngine::Model* enemyModel_ = nullptr;
-	
-	// デスパーティクル
-	DeathParticles* deathParticles_ = nullptr;
-	// デスパーティクルのモデル
-	KamataEngine::Model* deathParticlesModel_ = nullptr;
+	std::list<HitEffect*> hitEffects_;
 
-	void CheckALLCollision();
+
+	Skydome* skydome_ = nullptr;
+
+
+
+	CameraController* cameraController_ = nullptr;
+
+	MapChipField* mapChipField_ ;
+
+	std::vector<std::vector<KamataEngine::WorldTransform*>> worldTransformBlocks_;
+
+	KamataEngine::Matrix4x4 matrix_;
+
+	KamataEngine::Sprite* maskSprite_ = nullptr;
+
+	KamataEngine::Sprite* blackSprite_ = nullptr;
+
+	KamataEngine::Model* modelSkydome_ = nullptr;
+
+	DethParticles* deathParticles_ = nullptr;
+
+	AABB aabb_;
+
+	Phase phase_;
+
+	bool IsFinished() const { return finished_; } // シーンが終了したかどうかを返す
+
+	Fade* fade_ = nullptr;
+
+private:
+	uint32_t textureHandle_ = 0; // テクスチャハンドル
+
+	uint32_t playerTextureHandle_ = 0; // プレイヤーテクスチャハンドル
+
+	uint32_t enemyTextureHandle_ = 0; // 敵のテクスチャハンドル
+
+	bool finished_ = false; // シーンが終了したかどうかを示すフラグ
+
+	uint32_t soundDataHandle_ = 0; // サウンドデータハンドル
+
+	uint32_t voiceHandle_ = 0; // 音声ハンドル
+
+	float inputFloat3[3] = {0.0f, 0.0f, 0.0f}; // ImGui用のfloat配列
+
+	// Matrix4x4 viewMatrix;
+
+	bool isDethParticlesActive_ ; // 死亡パーティクルのアクティブ状態
+
+	bool isDebugCameraActive_ = false;
+
+	float duration_ = 1.0f;
+
+	static inline const int kEnemyNum = 3; // 敵の数
+
 };
+
