@@ -31,6 +31,7 @@ public:
 	void SetMovableArea(Rect area) { movableArea_ = area;}
 
 private:
+
 	// ビュープロジェクション
 	KamataEngine::Camera* camera_=nullptr;
 	Player* target_ = nullptr;
@@ -46,3 +47,4 @@ private:
 	static inline const Rect marginArea_ = {-3.0f, 3.0f, -2.0f, 2.0f};
 
 };
+

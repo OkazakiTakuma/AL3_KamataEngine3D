@@ -1,3 +1,4 @@
+
 #define NOMINMAX
 #include "Player.h"
 #include "MapChipFiled.h"
@@ -16,13 +17,16 @@ KamataEngine::Vector3 CornerPosition(const KamataEngine::Vector3& center, Player
 	    {-Player::kWidth / 2.0f, +Player::kHeight / 2.0f, 0.0f}, // kLeftTop
 	};
 
+
 	KamataEngine::Vector3 offset = offsetTable[static_cast<uint32_t>(corner)];
 	return {center.x + offset.x, center.y + offset.y, center.z + offset.z};
+
 }
 
 // そのタイルが「当たりあり」か？
 inline bool IsSolid(const MapChipField* field, uint32_t xi, uint32_t yi) { return field->GetMapChipTypeByIndex(xi, yi) == MapChipField::MapChipType::kBlock; }
 
+ mapchippatch
 // ワールド座標が刺さっているタイルが「当たりあり」か？
 inline bool IsSolidAt(const MapChipField* field, const KamataEngine::Vector3& pos) {
 	auto idx = field->GetMapChipIndexByPosition(pos);
@@ -109,6 +113,7 @@ void Player::MapCllisionCheckDown(Player::ColisionMapInfo& info) {
 
 			// 一番手前の床だけで十分なら break してもOK
 			// if (rect.top + smallNum >= bottomY_now) break;
+
 		}
 	}
 
@@ -229,6 +234,7 @@ void Player::OnSwichGround(const Player::ColisionMapInfo& info) {
 		if (velosity_.y > 0.0f) {
 			onGround_ = false;
 		}
+
 
 		std::array<Vector3, Player::Corner::kNumCenter> positionsNew;
 		Vector3 worldPos = {worldTransform_.translation_.x + info.velosity_.x, worldTransform_.translation_.y + info.velosity_.y, worldTransform_.translation_.z + info.velosity_.z};
@@ -771,8 +777,17 @@ void Player::TitleUpdata() {
 	worldTransform_.matWorld_ = MakeAffineMatrix(worldTransform_.scale_, worldTransform_.rotation_, worldTransform_.translation_);
 	worldTransform_.TransferMatrix();
 	WorldTrnasformUpdate(worldTransform_);
-}
 
+}
+void IsLeftCollision(CollisionMapInfo& info, const WorldTransform& worldTransform_, MapChipField* mapChipField) {
+	std::array<Vector3, 4> positionsNew;
+	for (uint32_t i = 0; i < 4; i++) {
+		positionsNew[i] = CornerPosition(Add(worldTransform_.translation_, info.movement), static_cast<Corner>(i));
+	}
+
+	if (info.movement.x >= 0) {
+		return; // 右へ移動中の場合は判定不要
+	}
 void Player::Draw() {
 
 	// 自キャラの描画
@@ -788,3 +803,4 @@ void Player::Draw() {
 void Player::SetPosition(const KamataEngine::Vector3& position) { worldTransform_.translation_ = position; }
 
 const KamataEngine::WorldTransform& Player::GetWoldTransform() const { return worldTransform_; }
+

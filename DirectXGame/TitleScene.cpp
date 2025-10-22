@@ -79,10 +79,12 @@ void TitleScene::Update() {
 			finished_ = true;
 		}
 		break;
+
 	}
 }
 
 void TitleScene::Draw() {
+
 
   KamataEngine::DirectXCommon* dxCommon = KamataEngine::DirectXCommon::GetInstance();
 
@@ -103,3 +105,4 @@ void TitleScene::Draw() {
 
 
 }
+

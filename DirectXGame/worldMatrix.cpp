@@ -4,16 +4,23 @@ using namespace KamataEngine;
 
 void WorldTransformUpdate(KamataEngine::WorldTransform& worldTransform){
       // scaleの変換
-	Vector3Matrix scale = {worldTransform.scale_.x, worldTransform.scale_.y, worldTransform.scale_.z};
+	
+	
+	
+	Vector3 scale = {worldTransform.scale_.x, worldTransform.scale_.y, worldTransform.scale_.z};
 	
 	// rotateの変換
-	Vector3Matrix rotate = {worldTransform.rotation_.x, worldTransform.rotation_.y, worldTransform.rotation_.z};
+	Vector3 rotate = {worldTransform.rotation_.x, worldTransform.rotation_.y, worldTransform.rotation_.z};
 
 	// translateの変換
-	Vector3Matrix translate = {worldTransform.translation_.x, worldTransform.translation_.y, worldTransform.translation_.z};
+	Vector3 translate = {worldTransform.translation_.x, worldTransform.translation_.y, worldTransform.translation_.z};
 
 // アフィン変換
-Matrix4x4Afifne affine = MakeAffineMatrix(scale, rotate, translate);
+
+	
+	
+	
+	Matrix4x4 affine = MakeAffineMatrix(scale, rotate, translate);
 for (int i = 0; i < 4; i++) {
 	for (int j = 0; j < 4; j++) {
 		// ワールドトランスフォームの行列にアフィン変換を適用

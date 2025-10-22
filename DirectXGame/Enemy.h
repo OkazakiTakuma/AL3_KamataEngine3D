@@ -1,4 +1,5 @@
 #pragma once
+
 #include "AABB.h"
 #include "KamataEngine.h"
 #include "WorldTransformClass.h"
@@ -82,3 +83,4 @@ private:
 	bool isCollisionDisabled_ = false; // 当たり判定無効化フラグ
 
 };
+

@@ -6,6 +6,7 @@ void CameraController::Initialize(KamataEngine::Camera* camera) { camera_ = came
 KamataEngine::Vector3 Lerp(KamataEngine::Vector3 a, KamataEngine::Vector3 b, float t) { return {a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t}; }
 
 void CameraController::Update() {
+
 	// カメラの更新処理
 	// 追従対象のワールドトランスフォームを参照
 	const KamataEngine::WorldTransform& targetWorldTransform = target_->GetWoldTransform();
@@ -13,6 +14,7 @@ void CameraController::Update() {
 	// camera_->translation_.x = targetWorldTransform.translation_.x + targetOffset_.x;
 	// camera_->translation_.y = targetWorldTransform.translation_.y + targetOffset_.y;
 	// camera_->translation_.z = targetWorldTransform.translation_.z + targetOffset_.z;
+
 
 	
 

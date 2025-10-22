@@ -1,6 +1,7 @@
 #pragma once
 #include "KamataEngine.h"
 #include "Player.h"
+#include "Enemy.h"
 #include "Skydome.h"
 #include <vector>
 #include "MapChipFiled.h"
@@ -25,7 +26,9 @@ class GameScene {
 
 public:
 
+
 	// 初期化
+ain
 	void Initialize();
 
 	// デストラクタ
@@ -37,6 +40,7 @@ public:
 	// 描画
 	void Draw();
 
+
 	void GenerateBlocks();
 
 	//全ての当たり判定を行う
@@ -45,6 +49,7 @@ public:
 	void ChangePhase();
 
 	void CreateHitEffect(KamataEngine::Vector3& spawnPosition);
+
 
 	// スプライト
 	KamataEngine::Sprite* sprite_ = nullptr;
@@ -73,12 +78,16 @@ public:
 	// デバッグカメラ
 	KamataEngine::DebugCamera* debugCamera_ = nullptr;
 
+
 	Player* player_ = nullptr;
 	//リスト
 	std::list<Enemy*> enemies_;
 	std::list<HitEffect*> hitEffects_;
 
+
 	Skydome* skydome_ = nullptr;
+
+
 
 	CameraController* cameraController_ = nullptr;
 
@@ -130,3 +139,4 @@ private:
 	static inline const int kEnemyNum = 3; // 敵の数
 
 };
+

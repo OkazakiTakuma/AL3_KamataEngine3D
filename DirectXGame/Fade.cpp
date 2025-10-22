@@ -1,4 +1,5 @@
 #include "Fade.h"
+
 #include <algorithm>
 void Fade::Initialize() {
 
@@ -42,12 +43,15 @@ void Fade::Update() {
 		break;
 	case Status::FadeOut:
 
+
 		counter_ += 1.0f / 60.0f;
 		if (counter_ >= duration_) {
 			counter_ = duration_;
 		}
 
+
 		sprite_->SetColor(KamataEngine::Vector4(0, 0, 0, std::clamp(counter_ / duration_, 0.0f, 1.0f))); // フェードアウトの色を設定
+
 
 		break;
 	default:
@@ -95,3 +99,4 @@ void Fade::Draw() {
 	sprite_->Draw();
 	KamataEngine::Sprite::PostDraw();
 }
+

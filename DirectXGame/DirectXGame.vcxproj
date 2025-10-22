@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -108,7 +108,9 @@
   <ItemGroup>
     <ClCompile Include="AABB.cpp" />
     <ClCompile Include="CameraController.cpp" />
+
     <ClCompile Include="DethParticles.cpp" />
+ 
     <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="Fade.cpp" />
     <ClCompile Include="GameScene.cpp" />
@@ -119,9 +121,11 @@
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Random.cpp" />
     <ClCompile Include="Skydome.cpp" />
+
     <ClCompile Include="Title.cpp" />
     <ClCompile Include="TitleScene.cpp" />
     <ClCompile Include="WorldTransformClass.cpp" />
+
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Resources\shaders\TerrainPS.hlsl">
@@ -201,8 +205,10 @@
   <ItemGroup>
     <ClInclude Include="AABB.h" />
     <ClInclude Include="CameraController.h" />
+
     <ClInclude Include="DethParticles.h" />
     <ClInclude Include="Easing.h" />
+
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="Fade.h" />
     <ClInclude Include="GameScene.h" />
@@ -215,6 +221,7 @@
     <ClInclude Include="Title.h" />
     <ClInclude Include="TitleScene.h" />
     <ClInclude Include="WorldTransformClass.h" />
+
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

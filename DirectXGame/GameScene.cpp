@@ -3,7 +3,9 @@
 
 using namespace KamataEngine;
 
+
 // AL302_13の27ページから再開
+
 
 void GameScene::Initialize() {
 	// 初期化処理
@@ -52,6 +54,7 @@ void GameScene::Initialize() {
 	// 軸方向表示が参照するビュープロジェクションを指定する(アドレス渡し)
 	AxisIndicator::GetInstance()->SetTargetCamera(&debugCamera_->GetCamera());
 
+
 	modelBlock_ = Model::Create();
 
 	modelSkydome_ = Model::CreateFromOBJ("skydome", true);
@@ -69,14 +72,19 @@ void GameScene::Initialize() {
 	// プレイヤー
 	//=================
 
+
 	// 自キャラの生成
+	// プレイヤーモデルの生成
+	playerModel_ = Model::CreateFromOBJ("player", true);
 	player_ = new Player();
 	// 自キャラの初期化
+ mapchippatch
 	KamataEngine::Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(2, 6);
 
 	// 座標をマップチップ番号で指定
 	player_->Initialize(playerModel_, playerTextureHandle_, attackModel_, &camera_, playerPosition);
 	player_->SetMapChipField(mapChipField_);
+
 
 	cameraController_ = new CameraController();
 	// CameraControllerの初期化
@@ -87,6 +95,7 @@ void GameScene::Initialize() {
 
 	// カメラ位置を即時合わせる
 	cameraController_->Reset();
+
 
 	// 仮の生成処理。後で消す
 	deathParticles_ = new DethParticles;
@@ -120,6 +129,7 @@ void GameScene::Initialize() {
 	HitEffect::SetModel(hitEffectModel_);
 	// ヒットエフェクト用のカメラ設定
 	HitEffect::SetCamera(&camera_);
+ main
 }
 
 GameScene::~GameScene() {
@@ -128,6 +138,7 @@ GameScene::~GameScene() {
 	delete enemyModel_;
 	delete debugCamera_;
 	delete player_;
+
 	delete modelBlock_;
 	delete modelSkydome_;
 	delete skydome_;
@@ -138,10 +149,12 @@ GameScene::~GameScene() {
 	enemies_.clear();
 	// ワールドトランスフォームの解放
 	for (std::vector<KamataEngine::WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
+ main
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
 
 			delete worldTransformBlock;
 		}
+ mapchippatch
 	}
 	worldTransformBlocks_.clear();
 
@@ -151,11 +164,13 @@ GameScene::~GameScene() {
 	}
 	for (HitEffect* hitEffect : hitEffects_) {
 		delete hitEffect;
+ main
 	}
 
 	delete deathParticles_;
 	delete fade_;
 }
+
 
 void GameScene::GenerateBlocks() {
 	// 要素数
@@ -454,6 +469,7 @@ void GameScene::Update() {
 			}
 		}
 
+
 #ifdef _DEBUG
 		if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
 
@@ -566,6 +582,7 @@ void GameScene::Draw() {
 
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
+
 	switch (phase_) {
 	case Phase::kPlay:
 		if (!modelParticle_) {
@@ -593,6 +610,7 @@ void GameScene::Draw() {
 				modelBlock_->Draw(*worldTransformBlock, camera_, textureHandle_);
 			}
 		}
+
 
 		// 自キャラの描画
 		player_->Draw();
@@ -650,6 +668,7 @@ void GameScene::Draw() {
 				if (!worldTransformBlock)
 					continue;
 				modelBlock_->Draw(*worldTransformBlock, camera_, textureHandle_);
+
 			}
 		}
 
@@ -758,4 +777,42 @@ void GameScene::Draw() {
 
 	// ラインを描画
 	// PrimitiveDrawer::GetInstance()->DrawLine3d({0, 0, 0}, {0, 10, 0}, {1.0f, 0.0f, 0.0f, 1.0f});
+}
+
+void GameScene::ChangePhase() {
+	switch (phase_) {
+
+	case GameScene::Phase::kPlay:
+		if (player_->IsDead()) {
+
+			phase_ = Phase::kDeath;
+			const Vector3& deathParticlePosition = player_->GetWorldPosition();
+			deathParticles_->Initialize(deathParticlePosition, deathParticlesModel_);
+		}
+		break;
+	case GameScene::Phase::kDeath:
+		if (deathParticles_ && deathParticles_->IsFinished()) {
+			fade_->Start(Fade::FadeOut, 1.0f);
+			phase_=Phase::kFadeOut;
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+void GameScene::CheckALLCollision() {
+#pragma region 自キャラと敵キャラとの衝突判定
+	// 自キャラと敵キャラの衝突判定
+	AABB playerAABB = player_->GetAABB();
+	AABB enemyAABB;
+	for (Enemy* enemy : enemies_) {
+		enemyAABB = enemy->GetAABB();
+		if (IsCollisionAABBToAABB(playerAABB, enemyAABB)) {
+			// 衝突した場合の処理
+			player_->OnCollisionEnemy(enemy);
+			enemy->OnCollisionPlayer(player_);
+		}
+	}
+#pragma endregion
 }

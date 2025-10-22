@@ -1,8 +1,6 @@
 #pragma once
+
 #include "KamataEngine.h"
-
-
-
 class Fade {
 
 	
@@ -39,5 +37,6 @@ class Fade {
 	float duration_ = 0.0f;
 	//経過時間カウンター
 	float counter_ = 0.0f; // フェードの経過時間カウンター
+
 
 };

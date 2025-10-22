@@ -1,4 +1,5 @@
 #include "Enemy.h"
+
 #define NOMINMAX
 #include "MapChipFiled.h"
 #include "WorldTransformClass.h"
@@ -54,9 +55,11 @@ void Enemy::OnCollision(const Player* player) {
 	    (worldTransform_.translation_.z + player->GetPosition().z) /2.0f};
 	gameScene_->CreateHitEffect(effectPos);
 
+
 }
 
 AABB Enemy::GetAABB() {
+
 
 	AABB aabb;
 	aabb.min = {worldTransform_.translation_.x - kWidth / 2.0f, worldTransform_.translation_.y - kHeight / 2.0f, worldTransform_.translation_.z - kWidth / 2.0f};

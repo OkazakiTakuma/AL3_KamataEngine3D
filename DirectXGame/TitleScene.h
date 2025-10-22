@@ -57,4 +57,5 @@ private:
 
 	Phase phase_ = Phase::kFadeIn; // シーンのフェーズ
 
+
 };

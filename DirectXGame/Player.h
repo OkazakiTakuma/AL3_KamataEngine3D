@@ -1,6 +1,7 @@
 #pragma once
 #include "AABB.h"
 #include "KamataEngine.h"
+
 #include "Matrix4x4_.h"
 #include "WorldTransformClass.h"
 #include <cassert>
@@ -15,6 +16,7 @@ class Enemy;
 /// <summary>
 /// 自キャラ
 /// </summary>
+
 class Player {
 
 public:
@@ -60,8 +62,10 @@ public:
 	/// 初期化
 	/// </summary>
 	/// <param name="model">モデル</param>
+
 	/// <param name="textureHandle">テクスチャハンドル</param>
 	void Initialize(KamataEngine::Model* model, uint32_t textureHandle, KamataEngine::Model* attackModel, KamataEngine::Camera* camera, const KamataEngine::Vector3& position);
+
 
 	/// <summary>
 	/// 更新
@@ -75,7 +79,9 @@ public:
 	/// <summary>
 	/// 描画
 	/// </summary>
+
 	void Draw();
+
 
 	const KamataEngine::WorldTransform& GetWoldTransform() const;
 
@@ -163,6 +169,7 @@ private:
 
 	static inline const float kLimitRunSpeed = 0.5f;
 
+
 	LRDirection lrDirection_ = LRDirection::kRight;
 
 	// 旋回時の角度
@@ -171,6 +178,7 @@ private:
 	float turnTimer_ = 0.0f;
 	// 旋回時間<秒>
 	static inline const float kTurnTime = 0.3f;
+
 
 	// 設置状態フラグ
 	bool onGround_ = true;
@@ -219,3 +227,4 @@ private:
 	void UpdateStep();                 // ← ステップ中の補間更新
 
 };
+

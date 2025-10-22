@@ -24,6 +24,8 @@ MapChipField::IndexSet MapChipField::GetMapChipIndexByPosition(const KamataEngin
 }
 
 void MapChipField::ResetMapChipData() {
+
+	// マップチップデータのリセット
 	mapChipData_.data.clear();
 	mapChipData_.data.resize(kNumBlockVirtical);
 	for (std::vector<MapChipType>& mapChipDataLine : mapChipData_.data) {
@@ -32,6 +34,8 @@ void MapChipField::ResetMapChipData() {
 }
 
 void MapChipField::LoadMapChipCsv(const std::string& filePath) {
+
+	// マップチップデータのリセット
 	ResetMapChipData();
 
 	std::ifstream file;
@@ -59,8 +63,10 @@ void MapChipField::LoadMapChipCsv(const std::string& filePath) {
 	}
 }
 
+
 MapChipField::MapChipType MapChipField::GetMapChipTypeByIndex(uint32_t xIndex, uint32_t yIndex) const{
 	if (xIndex >= kNumBlockHorizontal || yIndex >= kNumBlockVirtical) {
+
 		return MapChipType::kBlank;
 	}
 	return mapChipData_.data[yIndex][xIndex];
@@ -85,3 +91,4 @@ MapChipField::Rect MapChipField::GetRectByIndex(uint32_t xIndex, uint32_t yIndex
 
 	return rect;
 }
+main

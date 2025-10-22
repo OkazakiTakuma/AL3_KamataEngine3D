@@ -1,6 +1,5 @@
-#include <Windows.h>
-#include "KamataEngine.h"
 #include "GameScene.h"
+
 #include "TitleScene.h"
 using namespace KamataEngine;
 
@@ -93,6 +92,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//エンジンの初期化
 	KamataEngine::Initialize(L"LE2B_25_ミヤザワ_ハルヒ_TR");
 
+
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
 	//ImGuiManagerインスタンスの取得
@@ -123,6 +123,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//メインループ
 	while (true) {
 
+
 		// エンジンの更新
 		if (KamataEngine::Update()) {
 			break;
@@ -131,6 +132,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		imguiManager->Begin();
 
 		
+
 
 		ChangeScene();
 		UpdataScene();
@@ -142,6 +144,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//描画開始
 		dxCommon->PreDraw();
+
+
 
 		DrawScene();
 		
@@ -160,7 +164,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	}
 
+
 	// ゲームシーンの解放
+
 	delete gameScene;
 	delete titleScene;
 	//nullptrの代入
@@ -169,4 +175,63 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	KamataEngine::Finalize();
 
 	return 0;
+}
+void ChangeScene() {
+	switch (scene) {
+	case kUnknown:
+		break;
+	case kTitle:
+		if (titleScene->IsFinished()) {
+			scene = Scene::kGame;
+			delete titleScene;
+			titleScene = nullptr;
+			gameScene = new GameScene();
+			gameScene->Initialize();
+		}
+		break;
+	case kGame:
+		if (gameScene->IsFinished()) {
+			scene = Scene::kTitle;
+			delete gameScene;
+			gameScene = nullptr;
+			titleScene = new TitleScene();
+			titleScene->Initialize();
+		}
+		break;
+	default:
+		break;
+	}
+};
+
+void UpdateScene() {
+	switch (scene) {
+	case kUnknown:
+		break;
+	case kTitle:
+		// タイトルシーンの更新処理
+		titleScene->Update();
+		break;
+	case kGame:
+		// ゲームシーンの更新処理
+		gameScene->Update();
+		break;
+	default:
+		break;
+	}
+}
+void DrawScene() {
+	switch (scene) {
+	case kUnknown:
+		break;
+	case kTitle:
+		// タイトルシーンの描画処理
+		titleScene->Draw();
+		break;
+	case kGame:
+		// ゲームシーンの描画処理
+		gameScene->Draw();
+		break;
+	default:
+		break;
+	}
 }
