@@ -1,84 +1,75 @@
 #include "GameScene.h"
+#include "CameraController.h"
+#include "DeathParticles.h"
+#include "Enemy.h"
+#include "Fade.h"
+#include "MapChipField.h"
+#include "Player.h"
+#include "Skydome.h"
+#include <algorithm>
+#include <utility>
+
 using namespace KamataEngine;
-// 横幅
+
 void GameScene::Initialize() {
-#pragma region 画像・3Dモデル生成
-	// 3Dモデルの作成
+	// 3Dモデル生成と初期化
 	model_ = Model::Create();
-	// ワールドトランスフォームの初期化
 	worldTransform_.Initialize();
-	// カメラの初期化
+
+	// カメラとデバッグカメラ初期化
 	camera_.Initialize();
 	PrimitiveDrawer::GetInstance()->SetCamera(&camera_);
-	// デバッグカメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
-	// 軸方向表示の表示を有効にする
 	AxisIndicator::GetInstance()->SetVisible(true);
-	// 軸方向表示が参照するビュープロジェクション
 	AxisIndicator::GetInstance()->SetTargetCamera(&debugCamera_->GetCamera());
-#pragma region スカイドームとマップチップの初期化
-	// スカイドームの生成
+
+	// スカイドームとマップ読み込み
 	skydome_ = new Skydome();
 	skydome_->Initialize(&debugCamera_->GetCamera());
-	// マップチップフィールドの生成
-	mapChipField_ = new MapChipField;
-	// マップチップデータの読み込み
+
+	mapChipField_ = new MapChipField();
 	mapChipField_->LoadMapChipCsv("Resources/stage.csv");
 	GenerateBlock();
-#pragma endregion
 
-#pragma region 自キャラの初期化
+	// プレイヤー初期化
 	tecstureHandle_ = TextureManager::Load("mario.jpg");
 	sprite_ = Sprite::Create(tecstureHandle_, {100, 50});
-	// 座標をマップチップ番号で指定
+
 	playerPosition_ = mapChipField_->GetMapChipPositionByIndex(2, 17);
-	// プレイヤーの初期座標を設定
 	playerPosition_.x *= kBlockWidth;
 	playerPosition_.y *= kBlockHeight;
 	playerPosition_.z = -0.01f;
-	// 自キャラの生成
-	// プレイヤーモデルの生成
+
 	playerModel_ = Model::CreateFromOBJ("player", true);
 	player_ = new Player();
-	// 自キャラの初期化
 	player_->Initialize(playerPosition_, playerModel_);
 	player_->SetMapChipField(mapChipField_);
-#pragma endregion
-#pragma region 敵キャラの初期化
-	// 敵キャラのモデルの生成
+
+	// 敵の生成（同じモデルを共有）
 	enemyModel_ = Model::CreateFromOBJ("Enemy", true);
-	// 敵キャラの初期座標を設定
 	Vector3 enemyPosition2D = mapChipField_->GetMapChipPositionByIndex(5, 16);
 	enemyPosition2D.x *= kBlockWidth;
 	enemyPosition2D.y *= kBlockHeight;
 	KamataEngine::Vector3 enemyPosition = enemyPosition2D;
-	// 敵キャラの生成
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 5; ++i) {
 		Enemy* enemy = new Enemy();
-		// 敵キャラの初期化
 		enemy->Initialize(enemyPosition, enemyModel_);
-		// 敵キャラを敵リストに追加
 		enemies_.push_back(enemy);
-		// 敵キャラの初期座標をずらす
 		enemyPosition.x += 2.0f;
 	}
 
-#pragma endregion
-
-#pragma endregion
-#pragma region 死んだときのパーティクル
-	// 死んだときのパーティクルの初期化
-	// 死んだときのパーティクルの生成
+	// 死亡パーティクル
 	deathParticles_ = new DeathParticles();
 	deathParticlesModel_ = Model::CreateFromOBJ("deathParticle", true);
 
-	// カメラの初期化
+	// カメラコントローラ
 	cameraController_ = new CameraController();
 	cameraController_->Initialize();
 	cameraController_->SetTarget(player_);
 	cameraController_->Reset();
 	cameraController_->SetMovableArea(Rect(25, 100, 15, 100));
-#pragma endregion
+
+	// フェード開始
 	fade_ = new Fade();
 	fade_->Initialize();
 	fade_->Start(Fade::FadeIn, 1.0f);
@@ -93,7 +84,6 @@ GameScene::~GameScene() {
 	delete mapChipField_;
 	delete player_;
 	delete playerModel_;
-
 	delete cameraController_;
 	delete deathParticles_;
 	delete deathParticlesModel_;
@@ -101,263 +91,239 @@ GameScene::~GameScene() {
 		delete enemy;
 	}
 	delete enemyModel_;
-	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
-		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
-			delete worldTransformBlock;
+	for (auto& line : worldTransFormBlocks_) {
+		for (WorldTransform* wt : line) {
+			delete wt;
 		}
 	}
 	worldTransFormBlocks_.clear();
+	delete fade_;
 }
 
 void GameScene::Update() {
+	// フェーズごとの更新
 	switch (phase_) {
-
-	case GameScene::Phase::kFadeIn:
+	case Phase::kFadeIn:
 		cameraController_->Update();
-
 		skydome_->Update();
 		fade_->Update();
-		if (fade_->IsFinished()) {
-
+		UpdateBlocksTransforms();
+		if (fade_->IsFinished())
 			phase_ = Phase::kPlay;
-		}
-#pragma region ブロック配置の更新
-		for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
-			for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
-				if (!worldTransformBlock) {
-					continue;
-				}
-
-				// ワールドトランスフォームの更新
-				WorldTransformUpdate(*worldTransformBlock);
-			}
-		}
-#pragma endregion
-
 		break;
-	case GameScene::Phase::kPlay:
-		// 自キャラの更新
+
+	case Phase::kPlay:
 		skydome_->Update();
 		player_->Update();
 
-		// 敵キャラの更新
-		for (Enemy* enemy : enemies_) {
-			enemy->Update();
-		}
-		enemies_.remove_if([](Enemy* enemy) {
-			if (enemy->GetIsDead()) {
-				delete enemy;
-				return true;
-			}
-			return false;
-		});
+		UpdateEnemies();
 		cameraController_->Update();
-		// 敵キャラの更新
-
-#pragma region ブロック配置の更新
-		for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
-			for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
-				if (!worldTransformBlock) {
-					continue;
-				}
-
-				// ワールドトランスフォームの更新
-				WorldTransformUpdate(*worldTransformBlock);
-			}
-		}
-#pragma endregion
+		UpdateBlocksTransforms();
 		CheckALLCollision();
-
 		break;
-	case GameScene::Phase::kDeath:
+
+	case Phase::kDeath:
 		skydome_->Update();
-
-		// 死んだときのパーティクルの更新
-		if (deathParticles_) {
+		if (deathParticles_)
 			deathParticles_->Update();
-		}
-		for (Enemy* enemy : enemies_) {
-			enemy->Update();
-		}
+		UpdateEnemies();
 		cameraController_->Update();
-		// 敵キャラの更新
-
-#pragma region ブロック配置の更新
-		for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
-			for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
-				if (!worldTransformBlock) {
-					continue;
-				}
-
-				// ワールドトランスフォームの更新
-				WorldTransformUpdate(*worldTransformBlock);
-			}
-		}
-#pragma endregion
+		UpdateBlocksTransforms();
 		break;
-	case GameScene::Phase::kFadeOut:
+
+	case Phase::kFadeOut:
 		skydome_->Update();
 		fade_->Update();
+		UpdateBlocksTransforms();
 		if (fade_->IsFinished()) {
 			finished_ = true;
 			return;
 		}
-#pragma region ブロック配置の更新
-		for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
-			for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
-				if (!worldTransformBlock) {
-					continue;
-				}
-
-				// ワールドトランスフォームの更新
-				WorldTransformUpdate(*worldTransformBlock);
-			}
-		}
-#pragma endregion
-
 		break;
+
 	default:
 		break;
 	}
-	ChangePhase();
-#ifdef _DEBUG
-	// デバッグカメラの更新
-	debugCamera_->Update();
 
+	ChangePhase();
+
+#ifdef _DEBUG
+	debugCamera_->Update();
 #endif
 }
 
 void GameScene::Draw() {
-
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
-	// 3Dモデルの描画
 	Model::PreDraw(dxCommon->GetCommandList());
 
-	// スカイドームの描画
-	skydome_->Draw();
-	// スプライトの描画
-	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransFormBlocks_) {
-		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
-			if (!worldTransformBlock) {
+	// スカイドームは先に描画
+	if (skydome_)
+		skydome_->Draw();
+
+	// ブロックの描画
+	for (auto& line : worldTransFormBlocks_) {
+		for (WorldTransform* wt : line) {
+			if (!wt)
 				continue;
-			}
-			model_->Draw(*worldTransformBlock, cameraController_->GetCamera());
+			model_->Draw(*wt, cameraController_->GetCamera());
 		}
 	}
-	// 自キャラの描画
-	if (!player_->IsDead()) {
+
+	// プレイヤー描画（生きているときのみ）
+	if (player_ && !player_->IsDead()) {
 		player_->Draw(&cameraController_->GetCamera());
 	}
-	// 敵キャラの描画
+
+	// 敵描画
 	for (Enemy* enemy : enemies_) {
-		enemy->Draw(&cameraController_->GetCamera());
+		if (enemy)
+			enemy->Draw(&cameraController_->GetCamera());
 	}
-	// 死んだときのパーティクルの描画
-	if (phase_ == Phase::kDeath) {
+
+	// 死亡時パーティクル
+	if (phase_ == Phase::kDeath && deathParticles_) {
 		deathParticles_->Draw(&cameraController_->GetCamera());
 	}
-	if (Phase::kFadeIn == phase_ || Phase::kFadeOut == phase_) {
-		// フェードイン・アウト中はモデルを描画しない
+
+	// フェード処理（フェード中はモデル描画後にフェードを描画して終了）
+	if (phase_ == Phase::kFadeIn || phase_ == Phase::kFadeOut) {
 		fade_->Draw();
+		Model::PostDraw();
 		return;
 	}
+
 #ifdef _DEBUG
 	PrimitiveDrawer::GetInstance()->DrawLine3d({0, 0, 0}, {10, 0, 10}, {1.0f, 0.0f, 0.0f, 1.0f});
 #endif
 
 	Model::PostDraw();
+	if (!pendingDeleteEnemies_.empty()) {
+		for (Enemy* e : pendingDeleteEnemies_) {
+			// enemies_ から削除して delete
+			enemies_.remove(e);
+			delete e;
+		}
+		pendingDeleteEnemies_.clear();
+	}
 }
 
 void GameScene::GenerateBlock() {
-#pragma region ブロック配置の初期化
-	// 要素数
 	const uint32_t kNumBlockVertical = 20;
 	const uint32_t kNumBlockHorizontal = 100;
 
-	// 要素数の変更
-	worldTransFormBlocks_.resize(kNumBlockVertical);
+	worldTransFormBlocks_.assign(kNumBlockVertical, std::vector<WorldTransform*>(kNumBlockHorizontal, nullptr));
 
 	for (uint32_t i = 0; i < kNumBlockVertical; ++i) {
-		worldTransFormBlocks_[i].resize(kNumBlockHorizontal);
-	}
-	// 生成
-	for (uint32_t i = 0; i < kNumBlockVertical; i++) {
-		for (uint32_t j = 0; j < kNumBlockHorizontal; j++) {
+		for (uint32_t j = 0; j < kNumBlockHorizontal; ++j) {
 			if (mapChipField_->GetMapChipTypeIndex(j, i) == MapChipType::kBlock) {
-				// ワールドトランスフォームの生成
-				WorldTransform* worldTransForm = new WorldTransform();
-				worldTransForm->Initialize();
-				worldTransFormBlocks_[i][j] = worldTransForm;
-				worldTransFormBlocks_[i][j]->translation_ = mapChipField_->GetMapChipPositionByIndex(j, i);
-				worldTransFormBlocks_[i][j]->translation_.x *= kBlockWidth;
-				worldTransFormBlocks_[i][j]->translation_.y *= kBlockHeight;
+				WorldTransform* wt = new WorldTransform();
+				wt->Initialize();
+				wt->translation_ = mapChipField_->GetMapChipPositionByIndex(j, i);
+				wt->translation_.x *= kBlockWidth;
+				wt->translation_.y *= kBlockHeight;
+				worldTransFormBlocks_[i][j] = wt;
 			}
 		}
 	}
 	scale_ = {0};
 	rotate_ = {0};
 	translate_ = {0};
-#pragma endregion
 }
 
 void GameScene::ChangePhase() {
 	switch (phase_) {
-
-	case GameScene::Phase::kPlay:
-		if (player_->IsDead()) {
-
+	case Phase::kPlay:
+		if (player_ && player_->IsDead()) {
 			phase_ = Phase::kDeath;
-			const Vector3& deathParticlePosition = player_->GetWorldPosition();
-			deathParticles_->Initialize(deathParticlePosition, deathParticlesModel_);
+			const Vector3& deathPos = player_->GetWorldPosition();
+			if (deathParticles_)
+				deathParticles_->Initialize(deathPos, deathParticlesModel_);
 		}
 		break;
-	case GameScene::Phase::kDeath:
+
+	case Phase::kDeath:
 		if (deathParticles_ && deathParticles_->IsFinished()) {
 			fade_->Start(Fade::FadeOut, 1.0f);
 			phase_ = Phase::kFadeOut;
 		}
 		break;
+
 	default:
 		break;
 	}
 }
 
 void GameScene::CheckALLCollision() {
-#pragma region 自キャラと敵キャラとの衝突判定
-	// 自キャラと敵キャラの衝突判定
+	// 自キャラと敵のAABB衝突
+	if (!player_)
+		return;
+
 	AABB playerAABB = player_->GetAABB();
-	AABB enemyAABB;
 	for (Enemy* enemy : enemies_) {
-		enemyAABB = enemy->GetAABB();
+		if (!enemy)
+			continue;
+		AABB enemyAABB = enemy->GetAABB();
 		if (IsCollisionAABBToAABB(playerAABB, enemyAABB)) {
-			// 衝突した場合の処理
 			player_->OnCollisionEnemy(enemy);
 			enemy->OnCollisionPlayer(player_);
 		}
 	}
-#pragma endregion
 
-#pragma region 自キャラの攻撃範囲に敵キャラがいるかどうか
-	if (player_->GetIsAttack() == true) {
+	// 攻撃範囲判定（プレイヤーが攻撃状態のとき）
+	if (player_->GetIsAttack()) {
+		const int maxRange = static_cast<int>(player_->GetMaxAttackRange());
+		Vector3 playerPos = player_->GetWorldPosition();
+		playerPos.y *= 2.0f;
 
-		for (int i = 0; i < static_cast<int>(player_->GetMaxAttackRange()); i++) {
+		for (int r = 0; r < maxRange; ++r) {
 			AABB attackRange;
-			Vector3 worldPosition = player_->GetWorldPosition();
-			worldPosition.y *= 2;
-			attackRange.min = worldPosition - Vector3(static_cast<float>(i), static_cast<float>(i), kWidth / 2);
-			attackRange.max = worldPosition + Vector3(static_cast<float>(i), static_cast<float>(i), kWidth / 2);
+			float rf = static_cast<float>(r);
+			attackRange.min = playerPos - Vector3(rf, rf, kWidth / 2.0f);
+			attackRange.max = playerPos + Vector3(rf, rf, kWidth / 2.0f);
+
+			bool hitAny = false;
 			for (Enemy* enemy : enemies_) {
-				enemyAABB = enemy->GetAABB();
-				if (IsCollisionAABBToAABB(attackRange, enemyAABB)) {
+				if (!enemy)
+					continue;
+				if (IsCollisionAABBToAABB(attackRange, enemy->GetAABB())) {
+					// ヒットした敵をターゲットに設定し、Player 側でヒット処理（ライン表示）を行う
 					player_->SetTargetWorldPosition(enemy->GetWorldPosition());
 					player_->SetIsAttackHit(true);
-					
+					hitAny = true;
 					break;
 				}
 			}
-			
+			if (hitAny)
+				break;
 		}
 	}
-#pragma endregion
+}
+
+void GameScene::UpdateBlocksTransforms() {
+	for (auto& line : worldTransFormBlocks_) {
+		for (WorldTransform* wt : line) {
+			if (!wt)
+				continue;
+			WorldTransformUpdate(*wt);
+		}
+	}
+}
+
+void GameScene::UpdateEnemies() {
+	for (Enemy* enemy : enemies_) {
+		if (enemy)
+			enemy->Update();
+	}
+	// リストから死亡した敵を安全に削除
+	// 例: 現行の remove_if を止め、代わりにフラグを立てるループにする
+	for (Enemy* enemy : enemies_) {
+		if (!enemy)
+			continue;
+		enemy->Update();
+		if (enemy->GetIsDead()) {
+			pendingDeleteEnemies_.push_back(enemy);
+		}
+	}
+	// enemies_ はまだそのまま
 }

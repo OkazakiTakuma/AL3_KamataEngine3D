@@ -76,4 +76,8 @@ private:
 	KamataEngine::Model* deathParticlesModel_ = nullptr;
 
 	void CheckALLCollision();
+	void UpdateBlocksTransforms();
+	void UpdateEnemies();
+	// GameScene.h のメンバ
+	std::vector<Enemy*> pendingDeleteEnemies_;
 };

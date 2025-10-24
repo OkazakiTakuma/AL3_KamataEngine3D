@@ -173,6 +173,12 @@ private:
 	KamataEngine::Vector3 targetWorldPotion_ = {0};
 
 	bool isAttackHit_ = false;
+	// ヒットライン表示管理
+	bool isDrawHitLine_ = false;
+	float hitLineTimer_ = 0.0f;
+	float hitLineDuration_ = 0.5f;                    // 表示時間（秒）必要なら調整
+	KamataEngine::Vector3 hitLineTarget_;                           // ヒット先ワールド座標
+	KamataEngine::Vector4 hitLineColor_ = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤
 };
 void IsMapCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform, MapChipField* mapChipField);
 void IsTopCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform_, MapChipField* mapChipField);
