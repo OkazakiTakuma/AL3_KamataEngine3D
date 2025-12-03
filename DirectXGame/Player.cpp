@@ -11,10 +11,11 @@ void Player::Initialize(const Vector3& position, Model* model) {
 	model_ = model;
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;
-	worldTransform_.rotation_.y = std::numbers::pi_v<float> / 2.0f;
+	worldTransform_.rotation_.y = -std::numbers::pi_v<float> / 4;
+	worldTransform_.scale_ = {1.0f, 1.0f, 1.0f};
 }
 
-Player::~Player() = default;
+Player::~Player() {}
 
 void Player::Update() {
 	if (behaviorRequest_ != Behavior::kNull) {
@@ -40,6 +41,12 @@ void Player::Update() {
 		BehaviorRootUpdate();
 		break;
 	}
+	ImGui::Begin("Player Info");
+	ImGui::Text("Position: (%.2f, %.2f, %.2f)", worldTransform_.translation_.x, worldTransform_.translation_.y, worldTransform_.translation_.z);
+	ImGui::Text("Velocity: (%.2f, %.2f, %.2f)", velocity_.x, velocity_.y, velocity_.z);
+	ImGui::Text("On Ground: %s", onGround_ ? "True" : "False");
+	ImGui::Text("Is Ladder: %s", isLadder_ ? "True" : "False");
+	ImGui::End();
 
 	WorldTransformUpdate(worldTransform_);
 }
@@ -47,7 +54,7 @@ void Player::Update() {
 void Player::Draw(const Camera* camera) {
 	// 3Dモデルを描画
 	if (model_ && camera) {
-		model_->Draw(worldTransform_, *camera, textstureHandle_, nullptr);
+		model_->Draw(worldTransform_, *camera);
 	}
 
 	// ヒットラインを Draw のタイミングで表示する
@@ -82,27 +89,30 @@ void Player::BehaviorRootUpdate() {
 		behaviorRequest_ = Behavior::kAttack;
 	}
 
-	KeyMove();
+ 	KeyMove();
 
 	CollisionMapInfo collisionMapInfo{};
 	collisionMapInfo.movement = velocity_;
 
 	IsMapCollision(collisionMapInfo, worldTransform_, mapChipField_);
-
+	isLadder_ = CheckIsLadder();
 	Move(collisionMapInfo);
 	CollisionCeiling(collisionMapInfo);
 	CollisionFloor(collisionMapInfo);
 	ChengeOnGround(collisionMapInfo);
 	CollisionWall(collisionMapInfo);
+	isClackBlock_ = collisionMapInfo.isCrackBlockCollision;
 
 	worldTransform_.translation_.x += velocity_.x;
 	worldTransform_.translation_.y += velocity_.y;
 	worldTransform_.translation_.z += velocity_.z;
 
+	
+
 	if (turnTimer_ > 0.0f) {
 		constexpr float kFrameDelta = 1.0f / 60.0f;
 		turnTimer_ = std::max<float>(0.0f, turnTimer_ - kFrameDelta);
-		float destinationRotationYTable[] = {std::numbers::pi_v<float> / 2.0f, std::numbers::pi_v<float> * 3.0f / 2.0f};
+		float destinationRotationYTable[] = {-std::numbers::pi_v<float> / 4.0f, std::numbers::pi_v<float> / 4.0f};
 		const uint32_t idx = static_cast<uint32_t>(lrDirection_);
 		const float destinationRotationY = destinationRotationYTable[idx];
 		const float t = turnTimer_ / kTimeturn;
@@ -111,12 +121,13 @@ void Player::BehaviorRootUpdate() {
 	}
 }
 
-void Player::BehaviorAttackInitialize() {}
+void Player::BehaviorAttackInitialize() {
+	isAttack_ = true;
+	isAttackHit_ = false;
+}
 
 void Player::BehaviorAttackUpdate() {
-	isAttack_ = true;
 	if (isAttackHit_) {
-		isAttackHit_ = false;
 		AttackHitUpdate();
 		return;
 	}
@@ -133,6 +144,7 @@ void Player::AttackHitUpdate() {
 
 	// 攻撃処理が終わったので攻撃フラグは解除する
 	isAttack_ = false;
+	behaviorRequest_ = Behavior::kRoot;
 }
 void Player::SetTargetWorldPosition(const KamataEngine::Vector3& targetWorldPotion) { targetWorldPotion_ = targetWorldPotion; }
 
@@ -175,6 +187,7 @@ void Player::CollisionFloor(CollisionMapInfo& info) {
 	if (info.isFloorCollision) {
 		velocity_.y = 0.0f;
 		onGround_ = true;
+		
 	}
 }
 
@@ -190,6 +203,23 @@ void Player::KeyMove() {
 	const Input* in = Input::GetInstance();
 	bool pressingLeft = in->PushKey(DIK_LEFT) || in->PushKey(DIK_A);
 	bool pressingRight = in->PushKey(DIK_RIGHT) || in->PushKey(DIK_D);
+	bool pressingUp = in->PushKey(DIK_UP) || in->PushKey(DIK_W);
+	bool pressingDown = in->PushKey(DIK_DOWN) || in->PushKey(DIK_S);
+
+	// はしご移動処理（上下移動）
+	if (isLadder_ == true) {
+		if (pressingUp) {
+			velocity_.y = kClimbSpeed;
+			onGround_ = true;
+		} else if (pressingDown) {
+			velocity_.y = -kClimbSpeed;
+			onGround_ = true;
+		} else {
+			if (!onGround_) {
+				velocity_.y = 0.0f;
+			}
+		}
+	}
 
 	if (pressingLeft || pressingRight) {
 		if (pressingRight) {
@@ -242,25 +272,25 @@ void Player::KeyMove() {
 
 void Player::ChengeOnGround(CollisionMapInfo& info) {
 	if (onGround_) {
-		if (velocity_.y > 0.0f) {
+		if (velocity_.y > 0.0f && !isLadder_) {
 			onGround_ = false;
 			return;
 		}
 		bool hit = false;
 		Vector3 leftBottomPosition = CornerPosition(worldTransform_.translation_, Corner::kLeftBottom);
-		leftBottomPosition.y -= kOverGround;
 		Vector3 rightBottomPosition = CornerPosition(worldTransform_.translation_, Corner::kRightBottom);
-		rightBottomPosition.y -= kOverGround;
-
-		MapChipField::IndexSet leftIndexSet = mapChipField_->GetMapChipIndexByPosition(leftBottomPosition);
-		MapChipField::IndexSet rightIndexSet = mapChipField_->GetMapChipIndexByPosition(rightBottomPosition);
-
-		MapChipType leftMapChipType = mapChipField_->GetMapChipTypeIndex(leftIndexSet.xIndex, leftIndexSet.yIndex);
-		MapChipType rightMapChipType = mapChipField_->GetMapChipTypeIndex(rightIndexSet.xIndex, rightIndexSet.yIndex);
-
-		if (leftMapChipType == MapChipType::kBlock || rightMapChipType == MapChipType::kBlock) {
+		MapChipField::IndexSet indexSet = mapChipField_->GetMapChipIndexByPosition(leftBottomPosition);
+		MapChipType mapChipType = mapChipField_->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
+		if (mapChipType == MapChipType::kBlock) {
 			hit = true;
 		}
+
+		indexSet = mapChipField_->GetMapChipIndexByPosition(rightBottomPosition);
+		mapChipType = mapChipField_->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
+		if (mapChipType == MapChipType::kBlock) {
+			hit = true;
+		}
+
 		if (!hit) {
 			onGround_ = false;
 		}
@@ -272,6 +302,16 @@ void Player::ChengeOnGround(CollisionMapInfo& info) {
 			velocity_.y = 0.0f;
 		}
 	}
+}
+
+bool Player::CheckIsLadder() {
+	// プレイヤーの中心がはしごに触れているか判定する
+	MapChipField::IndexSet indexSet = mapChipField_->GetMapChipIndexByPosition(worldTransform_.translation_);
+	MapChipType mapChipType = mapChipField_->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
+	if (mapChipType == MapChipType::kLadder) {
+		return true;
+	}
+	return false;
 }
 
 void IsMapCollision(CollisionMapInfo& info, const WorldTransform& worldTransform, MapChipField* mapChipField) {
@@ -309,7 +349,7 @@ void IsTopCollision(CollisionMapInfo& info, const WorldTransform& worldTransform
 	if (hit) {
 		indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kLeftTop]);
 		MapChipField::Rect rect = mapChipField->GetMapChipRectByIndex(indexSet.xIndex, indexSet.yIndex);
-		float newY = static_cast<float>(rect.bottom) - 3.0f - kHeight;
+		float newY = static_cast<float>(rect.bottom) - kHeight;
 		if (newY < 0.0f)
 			newY = 0.0f;
 		info.movement.y = newY;
@@ -332,18 +372,28 @@ void IsBottomCollision(CollisionMapInfo& info, const WorldTransform& worldTransf
 	bool hit = false;
 	MapChipField::IndexSet indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kLeftBottom]);
 	MapChipType mapChipType = mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
-	if (mapChipType == MapChipType::kBlock)
+	if (mapChipType == MapChipType::kBlock) {
 		hit = true;
+	}
+	if (mapChipType == MapChipType::kCrackBlock) {
+		hit = true;
+		info.isCrackBlockCollision = true;
+	}
 
 	indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kRightBottom]);
 	mapChipType = mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
-	if (mapChipType == MapChipType::kBlock)
+	if (mapChipType == MapChipType::kBlock) {
 		hit = true;
+	}
+	if (mapChipType == MapChipType::kCrackBlock) {
+		hit = true;
+		info.isCrackBlockCollision = true;
+	}
 
 	if (hit) {
 		indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kLeftBottom]);
 		MapChipField::Rect rect = mapChipField->GetMapChipRectByIndex(indexSet.xIndex, indexSet.yIndex - 1);
-		float newY = static_cast<float>(rect.top) + kHeight + 1.0f;
+		float newY = static_cast<float>(rect.top) + 1.0f;
 		if (newY > 0.0f)
 			newY = 0.0f;
 		info.movement.y = newY;
@@ -431,6 +481,5 @@ Vector3 CornerPosition(const Vector3& centor, Corner corner) {
     };
 
 	// 元実装の意図に合わせて x,y を /2 する
-	return {
-	    (centor.x + offsetTable[static_cast<uint32_t>(corner)].x) / 2.0f, (centor.y + offsetTable[static_cast<uint32_t>(corner)].y) / 2.0f, centor.z + offsetTable[static_cast<uint32_t>(corner)].z};
+	return {(centor.x + offsetTable[static_cast<uint32_t>(corner)].x), (centor.y + offsetTable[static_cast<uint32_t>(corner)].y), centor.z + offsetTable[static_cast<uint32_t>(corner)].z};
 }

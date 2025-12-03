@@ -29,8 +29,8 @@ public:
 
 private:
 	bool finished_=false;
-	const float kBlockWidth = 2.0f;
-	const float kBlockHeight = 2.0f;
+	const float kBlockWidth = 1.0f;
+	const float kBlockHeight = 1.0f;
 	Fade* fade_ = nullptr;
 	Phase phase_ = Phase::kFadeIn;
 	// テクスチャーハンドル
@@ -38,7 +38,8 @@ private:
 	// スプライト
 	KamataEngine::Sprite* sprite_ = nullptr;
 	// 3Dモデル
-	KamataEngine::Model* model_ = nullptr;
+	KamataEngine::Model* blockModel_ = nullptr;
+	KamataEngine::Model* ladderModel_ = nullptr;
 	// ワールドトランスフォーム
 	KamataEngine::WorldTransform worldTransform_;
 	// カメラ
@@ -80,4 +81,13 @@ private:
 	void UpdateEnemies();
 	// GameScene.h のメンバ
 	std::vector<Enemy*> pendingDeleteEnemies_;
+	// 崩れる床タイマー管理用構造体
+	struct CrackBlockTimer {
+		uint32_t xIndex;
+		uint32_t yIndex;
+		float timer;
+	};
+
+	// GameScene クラスの private メンバに追加
+	std::vector<CrackBlockTimer> crackBlockTimers;
 };
