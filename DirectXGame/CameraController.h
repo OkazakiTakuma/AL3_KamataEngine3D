@@ -51,11 +51,11 @@ public:
 private:
 	KamataEngine::Camera camera_; // カメラ
 	Player* target_ = nullptr;               // プレイヤー
-	KamataEngine::Vector3 targetOffset_ = {0, 0, -40.0f}; // 追従対象とカメラの座標の差（オフセット）
+	KamataEngine::Vector3 targetOffset_ = {0, 0, -20.0f}; // 追従対象とカメラの座標の差（オフセット）
 	KamataEngine::Matrix4x4 viewProjection;
 	Rect movableArea_;
 	KamataEngine::Vector3 endCameraTranslate_; //カメラの目標座標
 	static inline const float kInteroilationRote = 0.2f;
-	static inline const float kVelocityBias = 30.0f;
+	static inline const float kVelocityBias = 10.0f;
 	static inline const Rect margin = {-20, 20, -20, 20};
 };

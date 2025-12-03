@@ -1,12 +1,14 @@
 #include "MapChipFIeld.h"
-#include <fstream> 
+#include <assert.h>
+#include <fstream>
 #include <sstream>
-#include<assert.h>
 using namespace KamataEngine;
 namespace {
 std::unordered_map<std::string, MapChipType> mapChipTable = {
     {"0", MapChipType::kBlank},
-    {"1", MapChipType::kBlock}
+    {"1", MapChipType::kBlock},
+    {"2", MapChipType::kLadder},
+    {"3", MapChipType::kCrackBlock}
 };
 }
 
@@ -26,7 +28,7 @@ void MapChipField::LoadMapChipCsv(const std::string& filePath) {
 	std::ifstream file;
 	file.open(filePath);
 	assert(file.is_open());
-	
+
 	// マップチップCSV
 	std::stringstream mapChipCsv;
 	// 1行ずつ読み込む
@@ -56,7 +58,7 @@ void MapChipField::LoadMapChipCsv(const std::string& filePath) {
 }
 
 MapChipType MapChipField::GetMapChipTypeIndex(uint32_t xIndex, uint32_t yIndex) {
-	if (xIndex < 0|| kNumBlockHorizontal-1<xIndex) {
+	if (xIndex < 0 || kNumBlockHorizontal - 1 < xIndex) {
 		return MapChipType::kBlank;
 	}
 	if (yIndex < 0 || kNumBlockVertical - 1 < yIndex) {
@@ -67,11 +69,11 @@ MapChipType MapChipField::GetMapChipTypeIndex(uint32_t xIndex, uint32_t yIndex) 
 
 Vector3 MapChipField::GetMapChipPositionByIndex(uint32_t xIndex, uint32_t yIndex) { return Vector3(kBlockWidth * xIndex, kBlockHeight * (kNumBlockVertical - 1 - yIndex), 0); }
 
-MapChipField::IndexSet MapChipField::GetMapChipIndexByPosition(const KamataEngine::Vector3& position) { 
+MapChipField::IndexSet MapChipField::GetMapChipIndexByPosition(const KamataEngine::Vector3& position) {
 	// X座標からXインデックスを計算
-	mapChipIndex_.xIndex = static_cast<uint32_t>((position.x+kBlockWidth)/kBlockWidth);
+	mapChipIndex_.xIndex = static_cast<uint32_t>((position.x + kBlockWidth) / kBlockWidth);
 	// Y座標からYインデックスを計算
-	mapChipIndex_.yIndex = static_cast<uint32_t>(kNumBlockVertical-1-((position.y+kBlockHeight)/kBlockHeight));
+	mapChipIndex_.yIndex = static_cast<uint32_t>(kNumBlockVertical - 1 - ((position.y + kBlockHeight) / kBlockHeight));
 	return mapChipIndex_;
 }
 
@@ -84,4 +86,14 @@ MapChipField::Rect MapChipField::GetMapChipRectByIndex(uint32_t xIndex, uint32_t
 	rect.bottom = position.y - kBlockHeight / 2.0f;
 	rect.top = position.y + kBlockHeight / 2.0f;
 	return rect;
+}
+
+void MapChipField::SetMapChipTypeIndex(uint32_t xIndex, uint32_t yIndex, MapChipType type) {
+	if (xIndex < 0 || kNumBlockHorizontal - 1 < xIndex) {
+		return;
+	}
+	if (yIndex < 0 || kNumBlockVertical - 1 < yIndex) {
+		return;
+	}
+	mapChipData_.data[yIndex][xIndex] = type;
 }

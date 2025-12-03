@@ -6,13 +6,13 @@
 
 using namespace KamataEngine;
 
-
 void Enemy::Initialize(const KamataEngine::Vector3& position, KamataEngine::Model* model) {
 	model_ = model;
 	isDead_ = false;
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;
 	worldTransform_.rotation_.y = -std::numbers::pi_v<float> / 2.0f;
+	worldTransform_.scale_ = {0.5f, 0.5f, 0.5f};
 
 	velocity_.x = -kWalkSpeed;
 	velocity_.y = 0.0f;
@@ -20,6 +20,9 @@ void Enemy::Initialize(const KamataEngine::Vector3& position, KamataEngine::Mode
 
 	warkTimer_ = 0.0f;
 }
+
+Enemy::~Enemy() {}
+
 
 void Enemy::Update() {
 	if (isDead_)
@@ -47,10 +50,15 @@ void Enemy::Update() {
 }
 
 void Enemy::Draw(const KamataEngine::Camera* camera) {
-	if (!model_)
+	if (isDead_) {
+		return; // 死亡時は描画しない
+	}
+	if (!model_) {
 		return;
-	if (!camera)
+	}
+	if (!camera) {
 		return;
+	}
 	model_->Draw(worldTransform_, *camera);
 }
 
@@ -71,6 +79,6 @@ AABB Enemy::GetAABB() {
 	return aabb;
 }
 
-void Enemy::OnCollisionPlayer(Player* /*player*/) { isDead_ = true; }
+void Enemy::OnCollisionPlayer(Player* /* player*/) { isDead_ = true; }
 
-bool Enemy::GetIsDead() { return isDead_; }
+bool Enemy::IsDead() { return isDead_; }

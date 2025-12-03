@@ -7,13 +7,14 @@ class Enemy {
 public:
 	
 	void Initialize(const KamataEngine::Vector3& position, KamataEngine::Model* model);
+	~Enemy();
 	void Update();
 	void Draw(const KamataEngine::Camera* camera);
 
 	KamataEngine::Vector3 GetWorldPosition();
 	AABB GetAABB();
 	void OnCollisionPlayer(Player* player);
-	bool GetIsDead();
+	bool IsDead();
 
 private:
 	// ワールド変換データ

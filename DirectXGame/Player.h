@@ -13,8 +13,8 @@ enum class LRDirection {
 	kRight,
 	kLeft,
 };
-static inline const float kWidth = 0.8f * 2;
-static inline const float kHeight = 0.8f * 2;
+static inline const float kWidth = 0.8f;
+static inline const float kHeight = 0.8f;
 enum Corner {
 	kRightBottom, // 右下
 	kLeftBottom,  // 左下
@@ -34,6 +34,7 @@ struct CollisionMapInfo {
 	bool isCeilingCollision = false;
 	bool isFloorCollision = false;
 	bool isWallCollision = false;
+	bool isCrackBlockCollision = false;
 	KamataEngine::Vector3 movement = {0, 0, 0};
 };
 
@@ -112,7 +113,14 @@ public:
 
 	void OnCollisionEnemy(Enemy* enemy);
 
+	bool GetIsLadder() const { return isLadder_; }
+
+	bool GetIsClackBlock() const { return isClackBlock_; }
+	void SetIsClackBlock(bool isClackBlock) { isClackBlock_ = isClackBlock; }
+
 	bool IsDead() const { return isDead_; }
+
+	LRDirection GetLRDirection() const { return lrDirection_; }
 
 private:
 	// ワールド変換データ
@@ -131,7 +139,8 @@ private:
 	KamataEngine::Vector3 acceleration_ = {0, 0, 0};
 	// プレイヤーの加速度
 	static inline const float kAcceleration = 0.01f;
-	static inline const float kAttenuation = 0.1f;
+	// プレイヤーの減速度
+	static inline const float kAttenuation = 0.3f;
 	static inline const float kAttenuationWall = 0.5f; // 最大移動速度
 	static inline const float kLimitRunspeed = 0.5f;
 	// プレイヤーの向き
@@ -150,16 +159,19 @@ private:
 	// 攻撃してるか
 	bool isAttack_ = false;
 	// 重力加速度(下)
-	static inline const float kGravityAccleration = 0.01f;
+	static inline const float kGravityAccleration = 0.005f;
 	// 最大落下速度
-	static inline const float kMaxFallSpeed = 1.0f;
+	static inline const float kMaxFallSpeed = 0.5f;
 	// ジャンプ力
-	static inline const float kJumpPower = 0.4f;
-	//
+	static inline const float kJumpPower = 0.2f;
+	// はしご移動速度
+	static inline const float kClimbSpeed = 0.1f;
 	KamataEngine::Vector3 scale_ = {0};
 	KamataEngine::Vector3 rotate_ = {0};
 	KamataEngine::Vector3 translate_ = {0};
 	MapChipField* mapChipField_ = nullptr;
+	bool isLadder_ = false;
+	bool isClackBlock_ = false;
 	// キャラクターの当たり判定の大きさ
 	static inline const float kBlank = 0.8f;
 
@@ -169,7 +181,7 @@ private:
 
 	Behavior behavior_ = Behavior::kRoot;
 	Behavior behaviorRequest_ = Behavior::kNull;
-	float maxAttackRange = 10;
+	float maxAttackRange = 5;
 	KamataEngine::Vector3 targetWorldPotion_ = {0};
 
 	bool isAttackHit_ = false;
@@ -179,6 +191,8 @@ private:
 	float hitLineDuration_ = 0.5f;                    // 表示時間（秒）必要なら調整
 	KamataEngine::Vector3 hitLineTarget_;                           // ヒット先ワールド座標
 	KamataEngine::Vector4 hitLineColor_ = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤
+	bool CheckIsLadder();
+
 };
 void IsMapCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform, MapChipField* mapChipField);
 void IsTopCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform_, MapChipField* mapChipField);
