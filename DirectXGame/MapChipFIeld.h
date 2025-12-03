@@ -8,6 +8,7 @@ enum class MapChipType {
 	kBlank, // 空白
 	kBlock, // ブロック
 	kLadder, // はしご
+	kIceBlocK,   // 氷の床
 	kCrackBlock, // 崩れる床
 };
 struct MapchipData {

@@ -207,6 +207,8 @@ void GameScene::Draw() {
 				blockModel_->Draw(*wt, cameraController_->GetCamera());
 			} else if (type == MapChipType::kLadder) {
 				ladderModel_->Draw(*wt, cameraController_->GetCamera());
+			} else if (type == MapChipType::kIceBlocK) {
+				blockModel_->Draw(*wt, cameraController_->GetCamera(),0,nullptr);
 			}
 				
 			
@@ -271,6 +273,14 @@ void GameScene::GenerateBlock() {
 				wt->scale_ = {1.0f, 1.0f, 1.0f};
 				worldTransFormBlocks_[i][j] = wt;
 			} else if (mapChipField_->GetMapChipTypeIndex(j, i) == MapChipType::kCrackBlock) {
+				WorldTransform* wt = new WorldTransform();
+				wt->Initialize();
+				wt->translation_ = mapChipField_->GetMapChipPositionByIndex(j, i);
+				wt->translation_.x *= kBlockWidth;
+				wt->translation_.y *= kBlockHeight;
+				wt->scale_ = {0.5f, 0.5f, 0.5f};
+				worldTransFormBlocks_[i][j] = wt;
+			} else if (mapChipField_->GetMapChipTypeIndex(j, i) == MapChipType::kIceBlocK) {
 				WorldTransform* wt = new WorldTransform();
 				wt->Initialize();
 				wt->translation_ = mapChipField_->GetMapChipPositionByIndex(j, i);

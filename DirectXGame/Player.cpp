@@ -89,13 +89,14 @@ void Player::BehaviorRootUpdate() {
 		behaviorRequest_ = Behavior::kAttack;
 	}
 
- 	KeyMove();
+	KeyMove();
 
 	CollisionMapInfo collisionMapInfo{};
 	collisionMapInfo.movement = velocity_;
 
 	IsMapCollision(collisionMapInfo, worldTransform_, mapChipField_);
 	isLadder_ = CheckIsLadder();
+	isIceBlock_ = collisionMapInfo.isIceBlockCollision;
 	Move(collisionMapInfo);
 	CollisionCeiling(collisionMapInfo);
 	CollisionFloor(collisionMapInfo);
@@ -106,8 +107,6 @@ void Player::BehaviorRootUpdate() {
 	worldTransform_.translation_.x += velocity_.x;
 	worldTransform_.translation_.y += velocity_.y;
 	worldTransform_.translation_.z += velocity_.z;
-
-	
 
 	if (turnTimer_ > 0.0f) {
 		constexpr float kFrameDelta = 1.0f / 60.0f;
@@ -187,7 +186,6 @@ void Player::CollisionFloor(CollisionMapInfo& info) {
 	if (info.isFloorCollision) {
 		velocity_.y = 0.0f;
 		onGround_ = true;
-		
 	}
 }
 
@@ -248,7 +246,11 @@ void Player::KeyMove() {
 		velocity_.x += acceleration_.x;
 		velocity_.x = std::clamp(velocity_.x, -kLimitRunspeed, kLimitRunspeed);
 	} else {
-		velocity_.x *= (1.0f - kAttenuation);
+		if (isIceBlock_) {
+			velocity_.x *= (1.0f - iceAttenuation_);
+		} else {
+			velocity_.x *= (1.0f - kAttenuation);
+		}
 		acceleration_.x = 0.0f;
 	}
 
@@ -379,6 +381,10 @@ void IsBottomCollision(CollisionMapInfo& info, const WorldTransform& worldTransf
 		hit = true;
 		info.isCrackBlockCollision = true;
 	}
+	if (mapChipType == MapChipType::kIceBlocK) {
+		hit = true;
+		info.isIceBlockCollision = true;
+	}
 
 	indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kRightBottom]);
 	mapChipType = mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
@@ -388,6 +394,10 @@ void IsBottomCollision(CollisionMapInfo& info, const WorldTransform& worldTransf
 	if (mapChipType == MapChipType::kCrackBlock) {
 		hit = true;
 		info.isCrackBlockCollision = true;
+	}
+	if (mapChipType == MapChipType::kIceBlocK) {
+		hit = true;
+		info.isIceBlockCollision = true;
 	}
 
 	if (hit) {

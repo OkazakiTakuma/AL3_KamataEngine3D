@@ -35,6 +35,7 @@ struct CollisionMapInfo {
 	bool isFloorCollision = false;
 	bool isWallCollision = false;
 	bool isCrackBlockCollision = false;
+	bool isIceBlockCollision = false;
 	KamataEngine::Vector3 movement = {0, 0, 0};
 };
 
@@ -141,6 +142,7 @@ private:
 	static inline const float kAcceleration = 0.01f;
 	// プレイヤーの減速度
 	static inline const float kAttenuation = 0.3f;
+	static inline const float iceAttenuation_ = 0.1f;
 	static inline const float kAttenuationWall = 0.5f; // 最大移動速度
 	static inline const float kLimitRunspeed = 0.5f;
 	// プレイヤーの向き
@@ -172,6 +174,7 @@ private:
 	MapChipField* mapChipField_ = nullptr;
 	bool isLadder_ = false;
 	bool isClackBlock_ = false;
+	bool isIceBlock_ = false;
 	// キャラクターの当たり判定の大きさ
 	static inline const float kBlank = 0.8f;
 
