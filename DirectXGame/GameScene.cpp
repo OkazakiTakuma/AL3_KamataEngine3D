@@ -298,6 +298,14 @@ void GameScene::GenerateBlock() {
 				wt->translation_.y *= kBlockHeight;
 				wt->scale_ = {0.5f, 0.5f, 0.5f};
 				worldTransFormBlocks_[i][j] = wt;
+			} else if (mapChipField_->GetMapChipTypeIndex(j, i) == MapChipType::kGoal) {
+				WorldTransform* wt = new WorldTransform();
+				wt->Initialize();
+				wt->translation_ = mapChipField_->GetMapChipPositionByIndex(j, i);
+				wt->translation_.x *= kBlockWidth;
+				wt->translation_.y *= kBlockHeight;
+				wt->scale_ = {0.5f, 0.5f, 0.5f};
+				worldTransFormBlocks_[i][j] = wt;
 			}
 		}
 	}
