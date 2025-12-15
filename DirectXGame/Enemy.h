@@ -15,6 +15,10 @@ public:
 	AABB GetAABB();
 	void OnCollisionPlayer(Player* player);
 	bool IsDead();
+	void HitMove();
+	bool GetIsHit() { return isHit; }
+	void SetIsHit(bool hit) { isHit = hit; }
+	int GetTimer() { return deathTimer; }
 
 private:
 	// ワールド変換データ
@@ -28,4 +32,6 @@ private:
 	static inline const float kWarlMotionTime = 1.0f;       // 敵キャラのワークモーション時間
 	float warkTimer_ = 0.0f;                                // 敵キャラのワークモーションタイマー
 	bool isDead_ = false;
+	bool isHit = false;
+	int deathTimer = 30;
 };

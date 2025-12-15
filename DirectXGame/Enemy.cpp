@@ -64,9 +64,7 @@ void Enemy::Draw(const KamataEngine::Camera* camera) {
 
 KamataEngine::Vector3 Enemy::GetWorldPosition() {
 	Vector3 worldPosition;
-	worldPosition.x = worldTransform_.matWorld_.m[3][0];
-	worldPosition.y = worldTransform_.matWorld_.m[3][1];
-	worldPosition.z = worldTransform_.matWorld_.m[3][2];
+	worldPosition=worldTransform_.translation_;
 	return worldPosition;
 }
 
@@ -82,3 +80,5 @@ AABB Enemy::GetAABB() {
 void Enemy::OnCollisionPlayer(Player* /* player*/) { isDead_ = true; }
 
 bool Enemy::IsDead() { return isDead_; }
+
+void Enemy::HitMove() { deathTimer--; }

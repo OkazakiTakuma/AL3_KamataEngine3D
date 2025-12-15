@@ -15,7 +15,7 @@ void Player::Initialize(const Vector3& position, Model* model) {
 	worldTransform_.scale_ = {1.0f, 1.0f, 1.0f};
 }
 
-Player::~Player() {  }
+Player::~Player() {}
 
 void Player::Update() {
 	if (behaviorRequest_ != Behavior::kNull) {
@@ -60,14 +60,11 @@ void Player::Draw(const Camera* camera) {
 	// ヒットラインを Draw のタイミングで表示する
 	if (isDrawHitLine_) {
 		// プレイヤーのワールド座標（ワールド行列の 4 列目）
-		Vector3 playerPos;
-		playerPos.x = worldTransform_.matWorld_.m[3][0];
-		playerPos.y = worldTransform_.matWorld_.m[3][1];
-		playerPos.z = worldTransform_.matWorld_.m[3][2];
+	
 
 		// PrimitiveDrawer で線を引く
 		if (auto drawer = PrimitiveDrawer::GetInstance()) {
-			drawer->DrawLine3d(playerPos, hitLineTarget_, hitLineColor_);
+			drawer->DrawLine3d(worldTransform_.translation_, hitLineTarget_, hitLineColor_);
 		}
 
 		// タイマーを減らす。Draw はフレーム単位なのでフレームレート想定でデルタを減算
@@ -129,8 +126,12 @@ void Player::BehaviorAttackInitialize() {
 void Player::BehaviorAttackUpdate() {
 	if (isAttackHit_) {
 		AttackHitUpdate();
+		isAttackHit_ = false;
+
 		return;
 	}
+	isAttackHit_ = false;
+
 	behaviorRequest_ = Behavior::kRoot;
 }
 
@@ -139,12 +140,18 @@ void Player::AttackHitUpdate() {
 	// プレイヤーのワールド位置は Draw 時に取得して描画するため、
 	// ここではターゲット位置とタイマー／フラグだけ設定する
 	hitLineTarget_ = targetWorldPotion_;
+	
 	isDrawHitLine_ = true;
 	hitLineTimer_ = hitLineDuration_;
-
+	hitTimer--;
 	// 攻撃処理が終わったので攻撃フラグは解除する
-	isAttack_ = false;
-	behaviorRequest_ = Behavior::kRoot;
+	if (hitTimer >= 0) {
+		drawLineFlag = true;
+	} else {
+		drawLineFlag = false;
+		isAttack_ = false;
+		behaviorRequest_ = Behavior::kRoot;
+	}
 }
 void Player::SetTargetWorldPosition(const KamataEngine::Vector3& targetWorldPotion) { targetWorldPotion_ = targetWorldPotion; }
 
@@ -341,7 +348,7 @@ void IsTopCollision(CollisionMapInfo& info, const WorldTransform& worldTransform
 	bool hit = false;
 	MapChipField::IndexSet indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kLeftTop]);
 	MapChipType mapChipType = mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
-	if (mapChipType == MapChipType::kBlock) {
+	if (mapChipType == MapChipType::kBlock || mapChipType == MapChipType::kCrackBlock || mapChipType == MapChipType::kIceBlocK) {
 		hit = true;
 	}
 	if (mapChipType == MapChipType::kGoal) {
@@ -351,7 +358,7 @@ void IsTopCollision(CollisionMapInfo& info, const WorldTransform& worldTransform
 
 	indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kRightTop]);
 	mapChipType = mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
-	if (mapChipType == MapChipType::kBlock) {
+	if (mapChipType == MapChipType::kBlock || mapChipType == MapChipType::kCrackBlock || mapChipType == MapChipType::kIceBlocK) {
 		hit = true;
 	}
 	if (mapChipType == MapChipType::kGoal) {
@@ -447,24 +454,37 @@ void IsRightCollision(CollisionMapInfo& info, const WorldTransform& worldTransfo
 
 	positionsNew[kRightTop].x -= 0.5f;
 	indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kRightTop]);
-	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kBlock) {
+	MapChipType mapChipType = mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
+	if (mapChipType == MapChipType::kBlock) {
 		hit = true;
 	}
-	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kGoal) {
-		info.isGoalCollision = true;
+	if (mapChipType == MapChipType::kCrackBlock) {
 		hit = true;
+	}
+	if (mapChipType == MapChipType::kIceBlocK) {
+		hit = true;
+	}
+	if (mapChipType == MapChipType::kGoal) {
+		hit = true;
+		info.isGoalCollision = true;
 	}
 
 	positionsNew[kRightBottom].x -= 0.5f;
 	indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kRightBottom]);
-	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kBlock) {
+	mapChipType = mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
+	if (mapChipType == MapChipType::kBlock) {
 		hit = true;
 	}
-	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kGoal) {
+	if (mapChipType == MapChipType::kCrackBlock) {
+		hit = true;
+	}
+	if (mapChipType == MapChipType::kIceBlocK) {
+		hit = true;
+	}
+	if (mapChipType == MapChipType::kGoal) {
+		hit = true;
 		info.isGoalCollision = true;
-		hit = true;
 	}
-
 	if (hit) {
 		indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kRightBottom]);
 		MapChipField::Rect rect = mapChipField->GetMapChipRectByIndex(indexSet.xIndex, indexSet.yIndex);
@@ -493,23 +513,35 @@ void IsLeftCollision(CollisionMapInfo& info, const WorldTransform& worldTransfor
 
 	bool hit = false;
 	MapChipField::IndexSet indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kLeftTop]);
-	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kBlock) {
+	MapChipType mapChipType = mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
+	if (mapChipType == MapChipType::kBlock) {
 		hit = true;
 	}
-	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kGoal) {
+	if (mapChipType == MapChipType::kCrackBlock) {
+		hit = true;
+	}
+	if (mapChipType == MapChipType::kIceBlocK) {
+		hit = true;
+	}
+	if (mapChipType == MapChipType::kGoal) {
+		hit = true;
 		info.isGoalCollision = true;
-		hit = true;
 	}
-
 	indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kLeftBottom]);
-	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kBlock) {
+	mapChipType = mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
+	if (mapChipType == MapChipType::kBlock) {
 		hit = true;
 	}
-	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kGoal) {
+	if (mapChipType == MapChipType::kCrackBlock) {
+		hit = true;
+	}
+	if (mapChipType == MapChipType::kIceBlocK) {
+		hit = true;
+	}
+	if (mapChipType == MapChipType::kGoal) {
+		hit = true;
 		info.isGoalCollision = true;
-		hit = true;
 	}
-
 	if (hit) {
 		indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kLeftBottom]);
 		MapChipField::Rect rect = mapChipField->GetMapChipRectByIndex(indexSet.xIndex, indexSet.yIndex);

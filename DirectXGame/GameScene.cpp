@@ -199,8 +199,9 @@ void GameScene::Draw() {
 	Model::PreDraw(dxCommon->GetCommandList());
 
 	// スカイドームは先に描画
-	if (skydome_)
+	if (skydome_) {
 		skydome_->Draw();
+	}
 
 	// ブロックの描画
 	for (uint32_t i = 0; i < worldTransFormBlocks_.size(); ++i) {
@@ -373,7 +374,7 @@ void GameScene::CheckALLCollision() {
 					// ヒットした敵をターゲットに設定し、Player 側でヒット処理（ライン表示）を行う
 					player_->SetTargetWorldPosition(enemy->GetWorldPosition());
 					player_->SetIsAttackHit(true);
-					enemy->OnCollisionPlayer(player_);
+					enemy->SetIsHit(true);
 					player_->SetIsAttack(false); // 攻撃フラグ解除
 					hitAny = true;
 					break;
@@ -404,7 +405,14 @@ void GameScene::UpdateBlocksTransforms() {
 void GameScene::UpdateEnemies() {
 	for (Enemy* enemy : enemies_) {
 		if (enemy) {
+			if (!enemy->GetIsHit()) {
 			enemy->Update();
+			} else {
+				enemy->HitMove();
+			}
+			if (enemy->GetTimer() <= 0) {
+				enemy->OnCollisionPlayer(player_);
+			}
 		}
 	}
 	// 死亡した敵をリストから削除してメモリ解放

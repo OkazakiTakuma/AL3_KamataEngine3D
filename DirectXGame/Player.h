@@ -192,6 +192,8 @@ private:
 
 	bool isAttackHit_ = false;
 	// ヒットライン表示管理
+	int hitTimer = 30;
+	bool drawLineFlag = false;
 	bool isDrawHitLine_ = false;
 	float hitLineTimer_ = 0.0f;
 	float hitLineDuration_ = 0.5f;                    // 表示時間（秒）必要なら調整
