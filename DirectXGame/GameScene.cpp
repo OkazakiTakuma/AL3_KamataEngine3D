@@ -13,7 +13,7 @@ using namespace KamataEngine;
 
 void GameScene::Initialize() {
 	// 3Dモデル生成と初期化
-	blockModel_ = Model::CreateFromOBJ("cube", true);
+	blockModel_ = Model::CreateFromOBJ("floor", true);
 	ladderModel_ = Model::CreateFromOBJ("ladder", true);
 	worldTransform_.Initialize();
 

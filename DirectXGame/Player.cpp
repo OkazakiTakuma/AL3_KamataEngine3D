@@ -60,7 +60,6 @@ void Player::Draw(const Camera* camera) {
 	// ヒットラインを Draw のタイミングで表示する
 	if (isDrawHitLine_) {
 		// プレイヤーのワールド座標（ワールド行列の 4 列目）
-	
 
 		// PrimitiveDrawer で線を引く
 		if (auto drawer = PrimitiveDrawer::GetInstance()) {
@@ -140,7 +139,7 @@ void Player::AttackHitUpdate() {
 	// プレイヤーのワールド位置は Draw 時に取得して描画するため、
 	// ここではターゲット位置とタイマー／フラグだけ設定する
 	hitLineTarget_ = targetWorldPotion_;
-	
+
 	isDrawHitLine_ = true;
 	hitLineTimer_ = hitLineDuration_;
 	hitTimer--;
@@ -191,8 +190,10 @@ void Player::CollisionCeiling(CollisionMapInfo& info) {
 }
 
 void Player::CollisionFloor(CollisionMapInfo& info) {
-	if (info.isFloorCollision) {
-		velocity_.y = 0.0f;
+	if (info.isFloorCollision || (isLadder_ && velocity_.y >= 0)) {
+		if (velocity_.y <= 0) {
+			velocity_.y = 0.0f;
+		}
 		onGround_ = true;
 	}
 }
