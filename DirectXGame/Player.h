@@ -36,6 +36,7 @@ struct CollisionMapInfo {
 	bool isWallCollision = false;
 	bool isCrackBlockCollision = false;
 	bool isIceBlockCollision = false;
+	bool isGoalCollision = false;
 	KamataEngine::Vector3 movement = {0, 0, 0};
 };
 
@@ -85,6 +86,8 @@ public:
 	void SetIsAttack(bool isAttack) { isAttack_ = isAttack; }
 
 	void SetIsAttackHit(bool isAttackHit) { isAttackHit_ = isAttackHit; }
+
+	bool GetIsGoal() { return isGoal; }
 
 	KamataEngine::Vector3 GetWorldPosition();
 	AABB GetAABB();
@@ -194,6 +197,7 @@ private:
 	float hitLineDuration_ = 0.5f;                    // 表示時間（秒）必要なら調整
 	KamataEngine::Vector3 hitLineTarget_;                           // ヒット先ワールド座標
 	KamataEngine::Vector4 hitLineColor_ = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤
+	bool isGoal;
 	bool CheckIsLadder();
 
 };

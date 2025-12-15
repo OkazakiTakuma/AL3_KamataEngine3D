@@ -88,6 +88,7 @@ GameScene::~GameScene() {
 	delete cameraController_;
 	delete deathParticles_;
 	delete deathParticlesModel_;
+	delete ladderModel_;
 	for (Enemy* enemy : enemies_) {
 		delete enemy;
 	}
@@ -154,7 +155,12 @@ void GameScene::Update() {
 					++it;
 				}
 			}
+			if (player_->GetIsGoal()) {
+				phase_ = Phase::kFadeOut;
+			}
 		}
+		
+
 		break;
 
 	case Phase::kDeath:
@@ -209,6 +215,9 @@ void GameScene::Draw() {
 				ladderModel_->Draw(*wt, cameraController_->GetCamera());
 			} else if (type == MapChipType::kIceBlocK) {
 				blockModel_->Draw(*wt, cameraController_->GetCamera(),0,nullptr);
+			} else if (type == MapChipType::kGoal) {
+				blockModel_->Draw(*wt, cameraController_->GetCamera(), 0, nullptr);
+
 			}
 				
 			
@@ -376,6 +385,7 @@ void GameScene::CheckALLCollision() {
 			}
 			// 攻撃がヒットしなかった場合、攻撃フラグを解除
 			player_->SetIsAttackHit(false);
+			player_->SetIsAttack(false); // 攻撃フラグ解除
 
 		}
 	}

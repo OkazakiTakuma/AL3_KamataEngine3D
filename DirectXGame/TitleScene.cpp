@@ -4,6 +4,7 @@ using namespace KamataEngine;
 TitleScene::~TitleScene() {
 	delete titleModel_;
 	delete fade_;
+	
 }
 
 void TitleScene::Initialize() {

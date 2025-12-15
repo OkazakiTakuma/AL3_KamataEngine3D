@@ -5,11 +5,12 @@
 using namespace KamataEngine;
 namespace {
 std::unordered_map<std::string, MapChipType> mapChipTable = {
-    {"0", MapChipType::kBlank},
-    {"1", MapChipType::kBlock},
-    {"2", MapChipType::kLadder},
+    {"0", MapChipType::kBlank     },
+    {"1", MapChipType::kBlock     },
+    {"2", MapChipType::kLadder    },
     {"3", MapChipType::kIceBlocK  },
-    {"4", MapChipType::kCrackBlock}
+    {"4", MapChipType::kCrackBlock},
+    {"5", MapChipType::kGoal      }
 };
 }
 

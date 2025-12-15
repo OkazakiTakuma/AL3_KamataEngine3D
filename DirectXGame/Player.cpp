@@ -15,7 +15,7 @@ void Player::Initialize(const Vector3& position, Model* model) {
 	worldTransform_.scale_ = {1.0f, 1.0f, 1.0f};
 }
 
-Player::~Player() {}
+Player::~Player() {  }
 
 void Player::Update() {
 	if (behaviorRequest_ != Behavior::kNull) {
@@ -103,6 +103,7 @@ void Player::BehaviorRootUpdate() {
 	ChengeOnGround(collisionMapInfo);
 	CollisionWall(collisionMapInfo);
 	isClackBlock_ = collisionMapInfo.isCrackBlockCollision;
+	isGoal = collisionMapInfo.isGoalCollision;
 
 	worldTransform_.translation_.x += velocity_.x;
 	worldTransform_.translation_.y += velocity_.y;
@@ -340,13 +341,23 @@ void IsTopCollision(CollisionMapInfo& info, const WorldTransform& worldTransform
 	bool hit = false;
 	MapChipField::IndexSet indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kLeftTop]);
 	MapChipType mapChipType = mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
-	if (mapChipType == MapChipType::kBlock)
+	if (mapChipType == MapChipType::kBlock) {
 		hit = true;
+	}
+	if (mapChipType == MapChipType::kGoal) {
+		hit = true;
+		info.isGoalCollision = true;
+	}
 
 	indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kRightTop]);
 	mapChipType = mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
-	if (mapChipType == MapChipType::kBlock)
+	if (mapChipType == MapChipType::kBlock) {
 		hit = true;
+	}
+	if (mapChipType == MapChipType::kGoal) {
+		hit = true;
+		info.isGoalCollision = true;
+	}
 
 	if (hit) {
 		indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kLeftTop]);
@@ -385,6 +396,10 @@ void IsBottomCollision(CollisionMapInfo& info, const WorldTransform& worldTransf
 		hit = true;
 		info.isIceBlockCollision = true;
 	}
+	if (mapChipType == MapChipType::kGoal) {
+		hit = true;
+		info.isGoalCollision = true;
+	}
 
 	indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kRightBottom]);
 	mapChipType = mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
@@ -398,6 +413,10 @@ void IsBottomCollision(CollisionMapInfo& info, const WorldTransform& worldTransf
 	if (mapChipType == MapChipType::kIceBlocK) {
 		hit = true;
 		info.isIceBlockCollision = true;
+	}
+	if (mapChipType == MapChipType::kGoal) {
+		hit = true;
+		info.isGoalCollision = true;
 	}
 
 	if (hit) {
@@ -428,13 +447,23 @@ void IsRightCollision(CollisionMapInfo& info, const WorldTransform& worldTransfo
 
 	positionsNew[kRightTop].x -= 0.5f;
 	indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kRightTop]);
-	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kBlock)
+	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kBlock) {
 		hit = true;
+	}
+	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kGoal) {
+		info.isGoalCollision = true;
+		hit = true;
+	}
 
 	positionsNew[kRightBottom].x -= 0.5f;
 	indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kRightBottom]);
-	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kBlock)
+	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kBlock) {
 		hit = true;
+	}
+	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kGoal) {
+		info.isGoalCollision = true;
+		hit = true;
+	}
 
 	if (hit) {
 		indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kRightBottom]);
@@ -464,12 +493,22 @@ void IsLeftCollision(CollisionMapInfo& info, const WorldTransform& worldTransfor
 
 	bool hit = false;
 	MapChipField::IndexSet indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kLeftTop]);
-	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kBlock)
+	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kBlock) {
 		hit = true;
+	}
+	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kGoal) {
+		info.isGoalCollision = true;
+		hit = true;
+	}
 
 	indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kLeftBottom]);
-	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kBlock)
+	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kBlock) {
 		hit = true;
+	}
+	if (mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex) == MapChipType::kGoal) {
+		info.isGoalCollision = true;
+		hit = true;
+	}
 
 	if (hit) {
 		indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kLeftBottom]);

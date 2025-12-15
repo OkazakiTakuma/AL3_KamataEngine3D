@@ -10,6 +10,7 @@ enum class MapChipType {
 	kLadder, // はしご
 	kIceBlocK,   // 氷の床
 	kCrackBlock, // 崩れる床
+	kGoal, // ゴール
 };
 struct MapchipData {
 	std::vector<std::vector<MapChipType>> data;
