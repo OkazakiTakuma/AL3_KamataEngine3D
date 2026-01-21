@@ -36,7 +36,6 @@ void GameScene::Initialize() {
 	GenerateBlock();
 
 	// プレイヤー初期化
-	tecstureHandle_ = TextureManager::Load("mario.jpg");
 	sprite_ = std::unique_ptr<Sprite>(Sprite::Create(tecstureHandle_, {100, 50}));
 	crackBlockTextureHandle_ = TextureManager::Load("floor/Crack.png");
 	playerPosition_ = mapChipField_->GetMapChipPositionByIndex(2, 42);

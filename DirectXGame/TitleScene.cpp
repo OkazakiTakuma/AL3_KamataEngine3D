@@ -9,7 +9,6 @@ TitleScene::~TitleScene() {
 }
 
 void TitleScene::Initialize() {
-	titleModel_ = Model::CreateFromOBJ("title", true);
 	worldTransform_.Initialize();
 	camera_.Initialize();
 	camera_.translation_.z = -10;
