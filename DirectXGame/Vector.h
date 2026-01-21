@@ -17,3 +17,5 @@ float Dot(const KamataEngine::Vector3& v1, const KamataEngine::Vector3& v2);
 float Length(const KamataEngine::Vector3& v);
 // 正規化
 KamataEngine::Vector3 Normalize(const KamataEngine::Vector3& v);
+
+KamataEngine::Vector3 Cross(const KamataEngine::Vector3& v1, const KamataEngine::Vector3& v2);

@@ -2,12 +2,42 @@
 #include "AABB.h"
 #include "KamataEngine.h"
 
-#include "Matrix4x4_.h"
-#include "WorldTransformClass.h"
-#include <cassert>
-#include "Easing.h"
+#include "Matrix.h"
+#include "Screen.h"
+#include "worldMatrix.h"
+#include <algorithm>
+#include <assert.h>
+#include <cmath>
+#include <imgui.h>
+#include <numbers>
+enum class LRDirection {
+	kRight,
+	kLeft,
+};
+static inline const float kWidth = 0.8f * 2;
+static inline const float kHeight = 0.8f * 2;
+enum Corner {
+	kRightBottom, // 右下
+	kLeftBottom,  // 左下
+	kRightTop,    // 右上
+	kLeftTop,     // 左上
 
-// 02_14の29ページから再開
+	kNumCorner // 要素数
+};
+
+enum class Behavior {
+	kRoot,   // 通常状態
+	kAttack, // 攻撃中
+	kNull    // リクエストなし
+};
+
+struct CollisionMapInfo {
+	bool isCeilingCollision = false;
+	bool isFloorCollision = false;
+	bool isWallCollision = false;
+	KamataEngine::Vector3 movement = {0, 0, 0};
+};
+
 
 class MapChipField;
 
@@ -72,9 +102,39 @@ public:
 	/// </summary>
 	void Update();
 
-	void TitleUpdata();
 
-	void PlayerMove();
+	/// 通常行動初期化
+	void BehaviorRootInitialize();
+
+	/// 通常行動更新
+	void BehaviorRootUpdate();
+
+	/// 攻撃行動初期化
+	void BehaviorAttackInitialize();
+
+	/// 攻撃行動更新
+	void BehaviorAttackUpdate();
+
+	void AttackHitUpdate();
+
+	void SetTargetWorldPosition(const KamataEngine::Vector3& targetWorldPotion);
+
+	float GetMaxAttackRange();
+
+	bool GetIsAttack();
+
+	void SetIsAttack(bool isAttack) { isAttack_ = isAttack; }
+
+	void SetIsAttackHit(bool isAttackHit) { isAttackHit_ = isAttackHit; }
+
+	KamataEngine::Vector3 GetWorldPosition();
+	AABB GetAABB();
+	/// <summary>
+	/// ワールドトランスフォームを参照
+	/// </summary>
+	/// <returns></returns>
+	const KamataEngine::WorldTransform& GetWorldTransform();
+
 
 	/// <summary>
 	/// 描画
@@ -180,11 +240,16 @@ private:
 	static inline const float kTurnTime = 0.3f;
 
 
-	// 設置状態フラグ
-	bool onGround_ = true;
 
-	// 重力加速度
-	static inline const float kGravityAcceleration = 0.1f;
+	// 接地状態フラグ
+	bool onGround_ = false;
+	// 二段ジャンプ
+	bool isSkyJump_ = false;
+	// 攻撃してるか
+	bool isAttack_ = false;
+	// 重力加速度(下)
+	static inline const float kGravityAccleration = 0.01f;
+
 	// 最大落下速度
 	static inline const float kLimitFallSpeed = 0.1f;
 	// ジャンプ初速
@@ -213,7 +278,22 @@ private:
 
 	static inline const float attakVelosity = 0.8f; // 突進距離
 
-	KamataEngine::WorldTransform correctionTransform; // マップチップの座標補正用
+
+	void KeyMove();
+	void ChengeOnGround(CollisionMapInfo& info);
+	const float kOverGround = 0.6f; // 接地判定のオーバーグラウンド
+
+	Behavior behavior_ = Behavior::kRoot;
+	Behavior behaviorRequest_ = Behavior::kNull;
+	float maxAttackRange = 10;
+	KamataEngine::Vector3 targetWorldPotion_ = {0};
+
+	bool isAttackHit_ = false;
+};
+void IsMapCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform, MapChipField* mapChipField);
+void IsTopCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform_, MapChipField* mapChipField);
+void IsBottomCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform_, MapChipField* mapChipField);
+
 
 	//攻撃フラグ
 	bool isAttack_ = false;
@@ -228,3 +308,5 @@ private:
 
 };
 
+
+KamataEngine::Vector3 CornerPosition(const KamataEngine::Vector3& centor, Corner corner);

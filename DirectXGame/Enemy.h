@@ -28,59 +28,22 @@ public:
 
 	AABB GetAABB();
 
-	void OnCollision(const Player* player);
+	void OnCollisionPlayer(Player* player);
+	bool GetIsDead();
 
-	bool IsDead() const { return isDead_; }
-
-	bool IsCollisionDisabled() const { return isCollisionDisabled_; }
-
-	void SetGameScene(GameScene* gameScene) { gameScene_ = gameScene; }
-
-	GameScene* gameScene_; // ゲームシーンへのポインタ
 
 private:
 	KamataEngine::WorldTransform worldTransform_;
 
 	KamataEngine::Model* model_ = nullptr;
 
-	KamataEngine::Camera* camera_ = nullptr;
-
-	Behavior behavior_ = Behavior::kWalk;
-
-	// 次の振る舞いリクエスト
-	Behavior behaviorRequest_ = Behavior::kUnKnown;
-
-	uint32_t textureHandle_ = 0u;
-
-	static inline const float kWalkSpeed = 0.1f;
-	// 速度
-	KamataEngine::Vector3 velostity_{};
-
-	//  float pi = 0.0f; // float版π
-
-	// キャラクターの当たり判定サイズ
-	static inline const float kWidth = 2.0f;
-	static inline const float kHeight = 2.0f;
-
-	// 最初の角度[度]
-	static inline const float kWalkMotionAngleStart = 0.0f;
-	// 最後の角度[度]
-	static inline const float kWalkMotionAngleEnd = 30.0f;
-	// アニメーションの周期となる時間[秒]
-	static inline const float kWalkMotionTime = 1.0f;
-
-	float walkTimer_ = 0.0f;
-
-	float turnNum = 0.0f;
-
-	// デスフラグ
+	static inline const float kWalkSpeed = 0.01f; // 敵キャラの歩行速度
+	KamataEngine::Vector3 velocity_ = {0, 0, 0};  // 敵キャラの速度
+	static inline const float kWorkMotionAngleStart = 0.0f; // 敵キャラのワークモーション開始角度
+	static inline const float kWorkMotionAngleEnd = 3.14f;  // 敵キャラのワークモーション終了角度
+	static inline const float kWarlMotionTime = 1.0f;       // 敵キャラのワークモーション時間
+	float warkTimer_ = 0.0f;                                // 敵キャラのワークモーションタイマー
 	bool isDead_ = false;
-
-	// 死亡演出用タイマー
-	float deathTimer_ = 0.0f;
-	static inline const float kDeathTime = 1.0f; // 死亡アニメーションの長さ（秒）
-
-	bool isCollisionDisabled_ = false; // 当たり判定無効化フラグ
 
 };
 

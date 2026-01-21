@@ -68,77 +68,10 @@ AABB Enemy::GetAABB() {
 	return aabb;
 }
 
-void Enemy::WorldPosUpdate() {
 
-	worldTransform_.translation_.x += velostity_.x;
-	worldTransform_.translation_.y += velostity_.y;
-	worldTransform_.translation_.z += velostity_.z;
+void Enemy::OnCollisionPlayer(Player* player) { 
+	(void)player;
+	isDead_ = true;
 }
 
-void Enemy::Update() {
-
-	   // ここを追加！！
-	if (behaviorRequest_ != Behavior::kUnKnown) {
-		behavior_ = behaviorRequest_;
-		behaviorRequest_ = Behavior::kUnKnown;
-	}
-
-	switch (behavior_) {
-	case Enemy::Behavior::kWalk: {
-
-		// 位置の更新
-		WorldPosUpdate();
-
-		// タイマーを加算
-		walkTimer_ += 1.0f / 60.0f;
-
-		// 顔を上下に動かすアニメーションの計算
-		float param = std::sin(2.0f * std::numbers::pi_v<float> * walkTimer_ / kWalkMotionTime);
-		float degree = kWalkMotionAngleStart + kWalkMotionAngleEnd * (param + 1.0f) / 2.0f;
-		param = DegToRad(degree);
-
-		worldTransform_.rotation_.x = param;
-
-		// ワールドトランスフォームの更新
-		worldTransform_.matWorld_ = MakeAffineMatrix(worldTransform_.scale_, worldTransform_.rotation_, worldTransform_.translation_);
-		worldTransform_.TransferMatrix();
-
-		// ワールド行列の更新
-		WorldTrnasformUpdate(worldTransform_);
-		break;
-	}
-	case Enemy::Behavior::kDeath: {
-
-		isCollisionDisabled_ = true;
-
-		deathTimer_ += 1.0f / 60.0f;
-
-		float t = deathTimer_ / kDeathTime;
-
-		// Y軸回転を 0 → 180度（πラジアン）へイージング
-		worldTransform_.rotation_.y = EaseOut(0.0f, std::numbers::pi_v<float>, t);
-		worldTransform_.rotation_.x = EaseOut(0.0f, std::numbers::pi_v<float>, t);
-
-		// アニメーション終了で死亡扱い
-		if (deathTimer_ >= kDeathTime) {
-			isDead_ = true;
-		}
-
-		// ワールドトランスフォームの更新
-		worldTransform_.matWorld_ = MakeAffineMatrix(worldTransform_.scale_, worldTransform_.rotation_, worldTransform_.translation_);
-		worldTransform_.TransferMatrix();
-
-		// ワールド行列の更新
-		WorldTrnasformUpdate(worldTransform_);
-
-		break;
-	}
-	}
-}
-
-void Enemy::Draw() {
-	// モデルの描画
-	if (model_) {
-		model_->Draw(worldTransform_, *camera_, textureHandle_);
-	}
-}
+bool Enemy::GetIsDead() { return isDead_; }

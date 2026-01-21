@@ -26,53 +26,120 @@ KamataEngine::Vector3 CornerPosition(const KamataEngine::Vector3& center, Player
 // そのタイルが「当たりあり」か？
 inline bool IsSolid(const MapChipField* field, uint32_t xi, uint32_t yi) { return field->GetMapChipTypeByIndex(xi, yi) == MapChipField::MapChipType::kBlock; }
 
- mapchippatch
-// ワールド座標が刺さっているタイルが「当たりあり」か？
-inline bool IsSolidAt(const MapChipField* field, const KamataEngine::Vector3& pos) {
-	auto idx = field->GetMapChipIndexByPosition(pos);
-	return IsSolid(field, idx.xIndex, idx.yIndex);
-}
 
-void Player::MapCllisionCheckUp(Player::ColisionMapInfo& info) {
-	if (info.velosity_.y <= 0.0f)
-		return; // 上昇時のみ
-
-	const float topY_now = worldTransform_.translation_.y + kHeight * 0.5f;
-	const float nextTopY = topY_now + info.velosity_.y;
-	const float probeY = nextTopY + smallNum;
-
-	std::array<KamataEngine::Vector3, 3> probe = {
-	    {
-         {worldTransform_.translation_.x - kWidth * 0.5f + smallNum, probeY, worldTransform_.translation_.z},
-         {worldTransform_.translation_.x, probeY, worldTransform_.translation_.z},
-         {worldTransform_.translation_.x + kWidth * 0.5f - smallNum, probeY, worldTransform_.translation_.z},
-	     }
-    };
-
-	bool hit = false;
-	float minCeilingTop = std::numeric_limits<float>::infinity(); // ←「最も低い」天井の top を記録
-
-	for (const auto& p : probe) {
-		if (IsSolidAt(mapChipField_, p)) {
-			auto idx = mapChipField_->GetMapChipIndexByPosition(p);
-			auto rect = mapChipField_->GetRectByIndex(idx.xIndex, idx.yIndex);
-
-			// ↑↑ 上方向の衝突面は rect.top（下向きの面）
-			minCeilingTop = std::min(minCeilingTop, rect.top);
-			hit = true;
+void Player::Update() {
+	// プレイヤーの移動
+	if (behaviorRequest_ != Behavior::kNull) {
+		behavior_ = behaviorRequest_;
+		switch (behavior_) {
+		case Behavior::kRoot:
+		default:
+			BehaviorRootInitialize();
+			break;
+		case Behavior::kAttack:
+			BehaviorAttackInitialize();
+			break;
 		}
+		behaviorRequest_ = Behavior::kNull;
 	}
 
-	if (hit) {
-		// プレイヤーの top を rect.top の少し手前にクランプ
-		float allowedMove = (minCeilingTop - smallNum) - topY_now;
-		if (allowedMove < info.velosity_.y) {
-			info.velosity_.y = allowedMove;
-		}
-		info.celling = true;
+	switch (behavior_) {
+	case Behavior::kRoot:
+	default:
+		BehaviorRootUpdate();
+		break;
+	case Behavior::kAttack:
+		BehaviorAttackUpdate();
+		break;
+	}
+
+	WorldTransformUpdate(worldTransform_);
+}
+
+void Player::Draw(const Camera* camera) {
+	// 3Dモデルを描画
+	model_->Draw(worldTransform_, *camera, textstureHandle_, nullptr);
+}
+
+void Player::BehaviorRootInitialize() {}
+
+void Player::BehaviorRootUpdate() {
+	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
+		behaviorRequest_ = Behavior::kAttack;
+	}
+	KeyMove();
+	CollisionMapInfo collisionMapInfo;
+	collisionMapInfo.movement = velocity_;
+	IsMapCollision(collisionMapInfo, worldTransform_, mapChipField_);
+	Move(collisionMapInfo);
+	CollisionCeiling(collisionMapInfo);
+	CollisionFloor(collisionMapInfo);
+	// 接地状態の変更
+	ChengeOnGround(collisionMapInfo);
+	CollisionWall(collisionMapInfo);
+
+	worldTransform_.translation_.x += velocity_.x;
+	worldTransform_.translation_.y += velocity_.y;
+	worldTransform_.translation_.z += velocity_.z;
+
+	// 旋回制御
+	if (turnTimer_ > 0) {
+		// 旋回中
+		turnTimer_ -= 1.0f / 60.0f;
+		// 左右のキャラの角度テーブル
+		float destinationRotationYTable[] = {
+		    std::numbers::pi_v<float> / 2,     // 右
+		    std::numbers::pi_v<float> * 3 / 2, // 左
+		};
+		// 状況による向きの変更
+		float destinationRotationY = destinationRotationYTable[static_cast<uint32_t>(lrDirection_)];
+		// イーズインアウトを使って徐々に向きの変更
+		float t = turnTimer_ / kTimeturn;
+		// 旋回角度
+		float rotationY = turnFirstRotationY_ + (destinationRotationY - turnFirstRotationY_) * (1.0f - t * t);
+		worldTransform_.rotation_.y = rotationY;
+
+	}
+
+
+	// ワールドトランスフォームの更新
+}
+
+void Player::BehaviorAttackInitialize() {}
+
+void Player::BehaviorAttackUpdate() {
+	isAttack_ = true;
+	if (isAttackHit_ == true) {
+		// 攻撃がヒットした場合
+		isAttackHit_ = false;
+		AttackHitUpdate();
+		return;
+
+	} else {
+		behaviorRequest_ = Behavior::kRoot;
 	}
 }
 
+void Player::AttackHitUpdate() {
+	// ターゲットに向けて線を引く
+	//PrimitiveDrawer::GetInstance()->DrawLine3d({worldTransform_.matWorld_.m[3][0], worldTransform_.matWorld_.m[3][1], worldTransform_.matWorld_.m[3][2]}, targetWorldPotion_, {1.0f, 0.0f, 0.0f, 1.0f});
+	
+
+}
+
+void Player::SetTargetWorldPosition(const KamataEngine::Vector3& targetWorldPotion) { targetWorldPotion_ = targetWorldPotion; }
+
+float Player::GetMaxAttackRange() { return maxAttackRange; }
+
+bool Player::GetIsAttack() { return isAttack_; }
+
+Vector3 Player::GetWorldPosition() {
+	Vector3 worldPosition;
+	worldPosition.x = worldTransform_.matWorld_.m[3][0];
+	worldPosition.y = worldTransform_.matWorld_.m[3][1];
+	worldPosition.z = worldTransform_.matWorld_.m[3][2];
+	return worldPosition;
+}
 
 
 
@@ -226,14 +293,75 @@ void Player::MapCllisionCheckLeft(Player::ColisionMapInfo& info) {
 }
 
 
-void Player::OnSwichGround(const Player::ColisionMapInfo& info) {
-	// 自キャラが接地状態？
-	if (onGround_) {
+void Player::KeyMove() {
+	// 接地状態の時
+	// 左右移動
+#pragma region 左右移動
+	if (Input::GetInstance()->PushKey(DIK_RIGHT) || Input::GetInstance()->PushKey(DIK_LEFT) || Input::GetInstance()->PushKey(DIK_A) || Input::GetInstance()->PushKey(DIK_D)) {
 
-		// ジャンプ開始
-		if (velosity_.y > 0.0f) {
+		if (Input::GetInstance()->PushKey(DIK_RIGHT) || Input::GetInstance()->PushKey(DIK_D)) {
+			// 左移動中はブレーキ
+			if (velocity_.x < 0) {
+				acceleration_.x = 0;
+				velocity_.x *= (1.0f - kAttenuation);
+			}
+			acceleration_.x += kAcceleration;
+
+			// 向きを変える
+			if (lrDirection_ != LRDirection::kRight) {
+				lrDirection_ = LRDirection::kRight;
+				// 旋回開始
+				turnFirstRotationY_ = worldTransform_.rotation_.y;
+				turnTimer_ = kTimeturn;
+			}
+		} else if (Input::GetInstance()->PushKey(DIK_LEFT) || Input::GetInstance()->PushKey(DIK_A)) {
+			// 右移動中はブレーキ
+			if (velocity_.x > 0) {
+				acceleration_.x = 0;
+				velocity_.x *= (1.0f - kAttenuation);
+			}
+			acceleration_.x -= kAcceleration;
+			// 向きを変える
+			if (lrDirection_ != LRDirection::kLeft) {
+				lrDirection_ = LRDirection::kLeft;
+				// 旋回開始
+				turnFirstRotationY_ = worldTransform_.rotation_.y;
+				turnTimer_ = kTimeturn;
+			}
+		}
+		velocity_.x += acceleration_.x;
+		// 速度の制限
+		velocity_.x = std::clamp(velocity_.x, -kLimitRunspeed, kLimitRunspeed);
+
+	} else {
+		// 速度が減速する
+		velocity_.x *= (1.0f - kAttenuation);
+	}
+#pragma endregion
+	if (onGround_) {
+		isSkyJump_ = true;
+
+		// ジャンプ
+#pragma region ジャンプ
+		if (Input::GetInstance()->TriggerKey(DIK_UP) || Input::GetInstance()->TriggerKey(DIK_W)) {
+			velocity_.y = 0.0f;
+			velocity_.y += kJumpPower;
 			onGround_ = false;
 		}
+	} else {
+		if (isSkyJump_ == true) {
+			if (Input::GetInstance()->TriggerKey(DIK_UP) || Input::GetInstance()->TriggerKey(DIK_W)) {
+				velocity_.y += kJumpPower;
+				isSkyJump_ = false;
+			}
+		}
+		// 空中にいる時に
+		// 重力をかける
+		velocity_.y -= kGravityAccleration;
+		// 速度の制限
+		velocity_.y = std::clamp(velocity_.y, -kMaxFallSpeed, kMaxFallSpeed);
+	}
+}
 
 
 		std::array<Vector3, Player::Corner::kNumCenter> positionsNew;
