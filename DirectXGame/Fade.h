@@ -1,28 +1,42 @@
 #pragma once
-#include "Matrix.h"
-#include "worldMatrix.h"
-#include <KamataEngine.h>
 
+#include "KamataEngine.h"
 class Fade {
 
-public:
-	enum  Status {
-		None,
-		FadeIn,
-		FadeOut,
+	
 
-	};
+	public:
+
+		// フェードの状態
+	    enum class Status {
+		    None,    // フェードなし
+		    FadeIn,  // フェードイン
+		    FadeOut, // フェードアウト
+	    };
+
 	void Initialize();
-	void Update();
-	void Draw();
-	void Start(Status status, float duration);
-	void Stop();
-	bool IsFinished() const;
 
-private:
-	uint32_t fadeTexture = 0u;
-	KamataEngine::Sprite* sprite_ = nullptr;
-	Status status_ = Status::None;
+	void Update();
+
+	void Draw();
+
+	void Start(Status status, float duration);
+
+	void Stop();
+
+	KamataEngine::Sprite* sprite_ = nullptr; // スプライトのポインタ
+
+	uint32_t textureHandle_ = 0u; // テクスチャハンドル
+
+	bool IsFinished() const; // フェードが終了したかどうかを返す
+
+	private:
+
+	Status status_ = Status::None; // フェードの状態
+		
 	float duration_ = 0.0f;
-	float counter_ = 0.0f;
+	//経過時間カウンター
+	float counter_ = 0.0f; // フェードの経過時間カウンター
+
+
 };

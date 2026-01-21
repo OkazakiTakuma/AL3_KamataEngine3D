@@ -1,15 +1,32 @@
 #include "Skydome.h"
-
 using namespace KamataEngine;
-void Skydome::Initialize(const  Camera* camera) {
-	modelSkydome_ = Model::CreateFromOBJ("skydome",true );
-	camera_ = camera;
+using namespace MathUtility;
+
+void Skydome::Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera) {
+
+	// NULLポインタチェック
+	assert(model);
+
+	// 引数の内容をメンバ変数に記録
+	model_ = model;
+
 	// ワールドトランスフォームの初期化
 	worldTransform_.Initialize();
-}
 
-Skydome::~Skydome() { delete modelSkydome_; }
+	// 引数の内容をメンバ変数に記録
+	camera_ = camera;
+
+	worldTransform_.translation_ = {0.0f, 0.0f, 0.0f};
+	worldTransform_.scale_ = {100.0f, 100.0f, 100.0f}; // 大きめにしてみる
+	worldTransform_.TransferMatrix();
+
+
+}
 
 void Skydome::Update() {}
 
-void Skydome::Draw() { modelSkydome_->Draw(worldTransform_, *camera_); }
+void Skydome::Draw() {
+
+	model_->Draw(worldTransform_, *camera_);
+
+}

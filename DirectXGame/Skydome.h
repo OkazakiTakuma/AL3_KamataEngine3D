@@ -1,22 +1,34 @@
 #pragma once
 #include "KamataEngine.h"
+#include <Windows.h>
+#include <vector>
 
-
-
+/// <summary>
+/// 天球
+/// </summary>
 class Skydome {
+
 public:
-	void Initialize(const KamataEngine::Camera* camera);
-	~Skydome();
+	/// <summary>
+	/// 初期化
+	/// </summary>
+	void Initialize(KamataEngine::Model* model, KamataEngine::Camera* camera);
+
+	/// <summary>
+	/// 更新
+	/// </summary>
 	void Update();
+
+	/// <summary>
+	/// 描画
+	/// </summary>
 	void Draw();
 
 private:
 	// ワールド変換データ
 	KamataEngine::WorldTransform worldTransform_;
 	// モデル
-	KamataEngine::Model* modelSkydome_ = nullptr;
-	// テクスチャハンドル
-	uint32_t textstureHandle_ = 0u;
+	KamataEngine::Model* model_ = nullptr;
 	// カメラ
-	const KamataEngine::Camera* camera_ = nullptr;
+	KamataEngine::Camera* camera_ = nullptr;
 };

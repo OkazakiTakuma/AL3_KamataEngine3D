@@ -1,11 +1,7 @@
 #include "GameScene.h"
-#include "KamataEngine.h"
-#include "TitleScene.h"
-#include <Windows.h>
 
+#include "TitleScene.h"
 using namespace KamataEngine;
-TitleScene* titleScene = nullptr;
-GameScene* gameScene = nullptr;
 
 enum Scene {
 	kNull,
@@ -20,41 +16,72 @@ void DrawScene();
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	ImGuiManager* imguiMneger = ImGuiManager::GetInstance();
 	Initialize(L"LD2B_01_オカザキ_タクマ_AL3");
+
 	scene = Scene::kTitle;
+
 	titleScene = new TitleScene();
 	titleScene->Initialize();
-	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
+#endif*/
+	
+	titleScene = new TitleScene();
+	// タイトルシーンの初期化
+	titleScene->Initialize();
+
+
+	//メインループ
 	while (true) {
-		if (Update()) {
+
+
+		// エンジンの更新
+		if (KamataEngine::Update()) {
 			break;
 		}
-		//// 更新処理 ////
 
-		// IMguiの更新処理
-		imguiMneger->Begin();
+		imguiManager->Begin();
+
 		
+
+
 		ChangeScene();
+		UpdataScene();
 
-		UpdateScene();
+		
 
-		imguiMneger->End();
+		//ImGui受付終了
+		imguiManager->End();
 
-		//// 描画処理 ////
-
+		//描画開始
 		dxCommon->PreDraw();
-		DrawScene();
 
-		// 軸表示の描画
+
+
+		DrawScene();
+		
+		//軸表示の描画
 		AxisIndicator::GetInstance()->Draw();
 
-		// Imguiの描画処理
-		imguiMneger->Draw();
+		//ImGui描画
+		imguiManager->Draw();
 
+		//描画終了
 		dxCommon->PostDraw();
+
+		if (KamataEngine::Input::GetInstance()->PushKey(DIK_ESCAPE)) {
+			return 0; // 左キーが押されたら終了
+		}
+
 	}
-	Finalize();
-	delete titleScene;
+
+
+	// ゲームシーンの解放
+
 	delete gameScene;
+	delete titleScene;
+	//nullptrの代入
+	gameScene = nullptr;
+
+	KamataEngine::Finalize();
+
 	return 0;
 }
 void ChangeScene() {
