@@ -201,6 +201,7 @@ private:
 	KamataEngine::Vector4 hitLineColor_ = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤
 	bool isGoal;
 	bool CheckIsLadder();
+	bool CheckIsIceBlock();
 
 };
 void IsMapCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform, MapChipField* mapChipField);

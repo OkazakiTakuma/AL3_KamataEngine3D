@@ -17,12 +17,11 @@ void Enemy::Initialize(const KamataEngine::Vector3& position, KamataEngine::Mode
 	velocity_.x = -kWalkSpeed;
 	velocity_.y = 0.0f;
 	velocity_.z = 0.0f;
-
+	deathTimer = 30;
 	warkTimer_ = 0.0f;
 }
 
 Enemy::~Enemy() {}
-
 
 void Enemy::Update() {
 	if (isDead_)
@@ -51,9 +50,9 @@ void Enemy::Update() {
 
 void Enemy::Draw(const KamataEngine::Camera* camera) {
 	if (isDead_) {
-		return; // 死亡時は描画しない
+		return; // 死亡時は描画しない 
 	}
-	if (!model_) {
+	if (!model_||model_==nullptr) {
 		return;
 	}
 	if (!camera) {
@@ -64,7 +63,7 @@ void Enemy::Draw(const KamataEngine::Camera* camera) {
 
 KamataEngine::Vector3 Enemy::GetWorldPosition() {
 	Vector3 worldPosition;
-	worldPosition=worldTransform_.translation_;
+	worldPosition = worldTransform_.translation_;
 	return worldPosition;
 }
 
@@ -81,4 +80,7 @@ void Enemy::OnCollisionPlayer(Player* /* player*/) { isDead_ = true; }
 
 bool Enemy::IsDead() { return isDead_; }
 
-void Enemy::HitMove() { deathTimer--; }
+void Enemy::HitMove() {
+	deathTimer--;
+	WorldTransformUpdate(worldTransform_);
+}
