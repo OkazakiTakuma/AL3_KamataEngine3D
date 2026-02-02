@@ -13,14 +13,18 @@ using namespace KamataEngine;
 
 void GameScene::Initialize() {
 	// 3Dモデル生成と初期化
-	blockModel_ = Model::CreateFromOBJ("floor", true);
-	ladderModel_ = Model::CreateFromOBJ("ladder", true);
+	blockModel_ = std::unique_ptr<Model>(Model::CreateFromOBJ("floor", true));
+	ladderModel_ = std::unique_ptr<Model>(Model::CreateFromOBJ("ladder", true));
+	goalModel_ = std::unique_ptr<Model>(Model::CreateFromOBJ("goal", true));
+	ropeModel_ = std::unique_ptr<Model>(Model::CreateFromOBJ("rope", true));
+
 	worldTransform_.Initialize();
 
 	// カメラとデバッグカメラ初期化
 	camera_.Initialize();
+
 	PrimitiveDrawer::GetInstance()->SetCamera(&camera_);
-	debugCamera_ = new DebugCamera(1280, 720);
+	debugCamera_ = std::make_unique<DebugCamera>(1280, 720);
 	AxisIndicator::GetInstance()->SetVisible(true);
 	AxisIndicator::GetInstance()->SetTargetCamera(&debugCamera_->GetCamera());
 
@@ -33,42 +37,44 @@ void GameScene::Initialize() {
 	GenerateBlock();
 
 	// プレイヤー初期化
-	tecstureHandle_ = TextureManager::Load("mario.jpg");
-	sprite_ = Sprite::Create(tecstureHandle_, {100, 50});
-
-	playerPosition_ = mapChipField_->GetMapChipPositionByIndex(2, 17);
+	sprite_ = std::unique_ptr<Sprite>(Sprite::Create(tecstureHandle_, {100, 50}));
+	crackBlockTextureHandle_ = TextureManager::Load("floor/Crack.png");
+	playerPosition_ = mapChipField_->GetMapChipPositionByIndex(2, 42);
 	playerPosition_.x *= kBlockWidth;
 	playerPosition_.y *= kBlockHeight;
 	playerPosition_.z = -0.01f;
 
-	playerModel_ = Model::CreateFromOBJ("player", true);
-	player_ = new Player();
-	player_->Initialize(playerPosition_, playerModel_);
+	playerModel_ = std::unique_ptr<Model>(Model::CreateFromOBJ("player", true));
+	player_ = std::make_unique<Player>();
+	player_->Initialize(playerPosition_, playerModel_.get(), ropeModel_.get());
 	player_->SetMapChipField(mapChipField_);
 
 	// 敵の生成（同じモデルを共有）
-	enemyModel_ = Model::CreateFromOBJ("Enemy", true);
-	Vector3 enemyPosition2D = mapChipField_->GetMapChipPositionByIndex(5, 16);
+	enemyModel_ = std::unique_ptr<Model>(Model::CreateFromOBJ("Enemy", true));
+	Vector3 enemyPosition2D = mapChipField_->GetMapChipPositionByIndex(5, 40);
 	enemyPosition2D.x *= kBlockWidth;
 	enemyPosition2D.y *= kBlockHeight;
 	KamataEngine::Vector3 enemyPosition = enemyPosition2D;
 	for (int i = 0; i < 5; ++i) {
 		Enemy* enemy = new Enemy();
-		enemy->Initialize(enemyPosition, enemyModel_);
+		enemy->Initialize(enemyPosition, enemyModel_.get());
 		enemies_.push_back(enemy);
 		enemyPosition.x += 2.0f;
 	}
 
 	// 死亡パーティクル
-	deathParticles_ = new DeathParticles();
-	deathParticlesModel_ = Model::CreateFromOBJ("deathParticle", true);
+	deathParticles_ = std::make_unique<DeathParticles>();
+	deathParticlesModel_ = std::unique_ptr<Model>(Model::CreateFromOBJ("deathParticle", true));
 
 	// カメラコントローラ
 	cameraController_ = new CameraController();
 	cameraController_->Initialize();
-	cameraController_->SetTarget(player_);
+	cameraController_->SetTarget(player_.get());
 	cameraController_->Reset();
 	cameraController_->SetMovableArea(Rect(0, 100, 10, 100));
+	bgmHandle_ = Audio::GetInstance()->LoadWave("audio/bgm/Gamebgm.wav");
+	bgmPlayHandle_ = Audio::GetInstance()->PlayWave(bgmHandle_, true, 0.2f);
+	sceneSeHandle_ = Audio::GetInstance()->LoadWave("audio/SE/sceneChange1.wav");
 
 	// フェード開始
 	fade_ = new Fade();
@@ -78,28 +84,16 @@ void GameScene::Initialize() {
 }
 
 GameScene::~GameScene() {
-	delete sprite_;
-	delete blockModel_;
-	delete skydome_;
-	delete debugCamera_;
-	delete mapChipField_;
-	delete player_;
-	delete playerModel_;
+
 	delete cameraController_;
-	delete deathParticles_;
-	delete deathParticlesModel_;
-	delete ladderModel_;
+
+	worldTransFormBlocks_.clear();
+	delete mapChipField_;
+
+	delete skydome_;
 	for (Enemy* enemy : enemies_) {
 		delete enemy;
 	}
-	delete enemyModel_;
-	for (auto& line : worldTransFormBlocks_) {
-		for (WorldTransform* wt : line) {
-			delete wt;
-		}
-	}
-	worldTransFormBlocks_.clear();
-
 	delete fade_;
 }
 
@@ -116,26 +110,26 @@ void GameScene::Update() {
 		break;
 
 	case Phase::kPlay:
-		skydome_->Update();
 
-		UpdateEnemies();
+		skydome_->Update();
 		cameraController_->Update();
 		UpdateBlocksTransforms();
-		CheckALLCollision();
 		player_->Update();
 		player_->SetMapChipField(mapChipField_);
+		CheckALLCollision();
+		UpdateEnemies();
 
 		if (player_) {
 			// プレイヤーの座標からインデックス取得
 			MapChipField::IndexSet idx = mapChipField_->GetMapChipIndexByPosition(player_->GetWorldPosition());
 			// ブロックタイプ判定
+			idx.yIndex += 1;
 			if (mapChipField_->GetMapChipTypeIndex(idx.xIndex, idx.yIndex) == MapChipType::kCrackBlock) {
 				// 既にタイマーが登録されているかチェック
-				auto it = std::find_if(crackBlockTimers.begin(), crackBlockTimers.end(),
-					[&](const CrackBlockTimer& t) { return t.xIndex == idx.xIndex && t.yIndex == idx.yIndex; });
+				auto it = std::find_if(crackBlockTimers.begin(), crackBlockTimers.end(), [&](const CrackBlockTimer& t) { return t.xIndex == idx.xIndex && t.yIndex == idx.yIndex; });
 				if (it == crackBlockTimers.end()) {
 					// 新規登録
-					crackBlockTimers.push_back({ idx.xIndex, idx.yIndex, 0.0f });
+					crackBlockTimers.push_back({idx.xIndex, idx.yIndex, 0.0f});
 				}
 			}
 			// タイマー更新
@@ -159,7 +153,6 @@ void GameScene::Update() {
 				phase_ = Phase::kFadeOut;
 			}
 		}
-		
 
 		break;
 
@@ -167,7 +160,6 @@ void GameScene::Update() {
 		skydome_->Update();
 		if (deathParticles_)
 			deathParticles_->Update();
-		UpdateEnemies();
 		cameraController_->Update();
 		UpdateBlocksTransforms();
 		break;
@@ -175,6 +167,11 @@ void GameScene::Update() {
 	case Phase::kFadeOut:
 		skydome_->Update();
 		fade_->Update();
+		if (Audio::GetInstance()->IsPlaying(bgmPlayHandle_)) {
+			Audio::GetInstance()->StopWave(bgmPlayHandle_);
+		}
+
+		scenePlayHandle_ = Audio::GetInstance()->PlayWave(sceneSeHandle_, false, 0.2f);
 		UpdateBlocksTransforms();
 		if (fade_->IsFinished()) {
 			finished_ = true;
@@ -207,29 +204,23 @@ void GameScene::Draw() {
 	for (uint32_t i = 0; i < worldTransFormBlocks_.size(); ++i) {
 		for (uint32_t j = 0; j < worldTransFormBlocks_[i].size(); ++j) {
 			WorldTransform* wt = worldTransFormBlocks_[i][j];
-			if (!wt) continue;
+			if (!wt)
+				continue;
 
 			MapChipType type = mapChipField_->GetMapChipTypeIndex(j, i);
-			if (type == MapChipType::kBlock || type == MapChipType::kCrackBlock) {
+			if (type == MapChipType::kBlock) {
 				blockModel_->Draw(*wt, cameraController_->GetCamera());
 			} else if (type == MapChipType::kLadder) {
 				ladderModel_->Draw(*wt, cameraController_->GetCamera());
+			} else if (type == MapChipType::kCrackBlock) {
+				blockModel_->Draw(*wt, cameraController_->GetCamera(), crackBlockTextureHandle_);
 			} else if (type == MapChipType::kIceBlocK) {
-				blockModel_->Draw(*wt, cameraController_->GetCamera(),0,nullptr);
-			} else if (type == MapChipType::kGoal) {
 				blockModel_->Draw(*wt, cameraController_->GetCamera(), 0, nullptr);
-
+			} else if (type == MapChipType::kGoal) {
+				goalModel_->Draw(*wt, cameraController_->GetCamera());
 			}
-				
-			
 		}
 	}
-
-	// プレイヤー描画（生きているときのみ）
-	if (player_ && !player_->IsDead()) {
-		player_->Draw(&cameraController_->GetCamera());
-	}
-
 	// 敵描画
 	for (Enemy* enemy : enemies_) {
 		if (enemy && !enemy->IsDead()) {
@@ -237,6 +228,12 @@ void GameScene::Draw() {
 			enemy->Draw(&cameraController_->GetCamera());
 		}
 	}
+	// プレイヤー描画（生きているときのみ）
+ 	if (player_ && !player_->IsDead()) {
+		player_->Draw(&cameraController_->GetCamera());
+	}
+
+
 
 	// 死亡時パーティクル
 	if (phase_ == Phase::kDeath && deathParticles_) {
@@ -258,7 +255,7 @@ void GameScene::Draw() {
 }
 
 void GameScene::GenerateBlock() {
-	const uint32_t kNumBlockVertical = 20;
+	const uint32_t kNumBlockVertical = 50;
 	const uint32_t kNumBlockHorizontal = 100;
 
 	worldTransFormBlocks_.assign(kNumBlockVertical, std::vector<WorldTransform*>(kNumBlockHorizontal, nullptr));
@@ -321,7 +318,7 @@ void GameScene::ChangePhase() {
 			phase_ = Phase::kDeath;
 			const Vector3& deathPos = player_->GetWorldPosition();
 			if (deathParticles_)
-				deathParticles_->Initialize(deathPos, deathParticlesModel_);
+				deathParticles_->Initialize(deathPos, deathParticlesModel_.get());
 		}
 		break;
 
@@ -349,54 +346,53 @@ void GameScene::CheckALLCollision() {
 		AABB enemyAABB = enemy->GetAABB();
 		if (IsCollisionAABBToAABB(playerAABB, enemyAABB)) {
 			player_->OnCollisionEnemy(enemy);
-			enemy->OnCollisionPlayer(player_);
+			enemy->OnCollisionPlayer(player_.get());
+		}
+	}
+	
+
+	// 攻撃範囲判定（プレイヤーが攻撃状態のとき）
+	// 攻撃状態で、かつ演出が始まったばかり(0)の時だけ敵を検索する
+	if (player_->GetBehavior() != Behavior::kAttack) {
+		return;
+	}
+
+	Vector3 pPos = player_->GetWorldPosition();
+	// プレイヤーの向きを取得 (lastDirection_ などを使用)
+	float dir = (player_->GetLRDirection() == LRDirection::kRight) ? 1.0f : -1.0f;
+
+	Enemy* closestEnemy = nullptr;
+	float minDistance = player_->GetMaxAttackRange();
+
+	for (Enemy* enemy : enemies_) {
+		if (enemy->IsDead())
+			continue;
+
+		Vector3 ePos = enemy->GetWorldPosition();
+
+		// 1. プレイヤーの向いている方向に敵がいるか
+		float diffX = (ePos.x - pPos.x) * dir;
+
+		// 2. 射程圏内かつ、最も近い敵を探す
+		if (diffX > 0 && diffX <= minDistance) {
+			// Y軸（高さ）が概ね合っているか
+			if (std::abs(ePos.y - pPos.y) < 1.0f) {
+				minDistance = diffX;
+				closestEnemy = enemy;
+			}
 		}
 	}
 
-	// 攻撃範囲判定（プレイヤーが攻撃状態のとき）
-	if (player_->GetIsAttack()) {
-		const int maxRange = static_cast<int>(player_->GetMaxAttackRange());
-		Vector3 playerPos = player_->GetWorldPosition();
-		playerPos.y *= 2.0f;
-
-		bool hitAny = false;
-		for (int r = 0; r < maxRange; ++r) {
-			AABB attackRange;
-			float rf = static_cast<float>(r);
-			if (player_->GetLRDirection() == LRDirection::kLeft) {
-				// 左向き
-
-				attackRange.min = playerPos - Vector3(rf, 0, kWidth / 2.0f);
-				attackRange.max = playerPos + Vector3(0, rf, kWidth / 2.0f);
-			} else {
-				// 右向き
-				attackRange.min = playerPos + Vector3(0, 0, -kWidth / 2.0f);
-				attackRange.max = playerPos + Vector3(rf, rf, kWidth / 2.0f);
-			
-			}
-
-			for (Enemy* enemy : enemies_) {
-				if (!enemy)
-					continue;
-				if (IsCollisionAABBToAABB(attackRange, enemy->GetAABB())) {
-					// ヒットした敵をターゲットに設定し、Player 側でヒット処理（ライン表示）を行う
-					player_->SetTargetWorldPosition(enemy->GetWorldPosition());
-					player_->SetIsAttackHit(true);
-					enemy->SetIsHit(true);
-					player_->SetIsAttack(false); // 攻撃フラグ解除
-					hitAny = true;
-					break;
-				}
-			}
-			// 1体でもヒットしたらループを抜ける
-			if (hitAny) {
-				break;
-			}
-			// 攻撃がヒットしなかった場合、攻撃フラグを解除
-			player_->SetIsAttackHit(false);
-			player_->SetIsAttack(false); // 攻撃フラグ解除
-
-		}
+	if (closestEnemy) {
+		// 敵が見つかった場合
+		player_->SetHitEnemy(closestEnemy);
+		player_->SetLineEnd(closestEnemy->GetWorldPosition());
+		closestEnemy->SetVelocity({0, 0, 0}); // 敵を停止させる
+	} else {
+		// 敵が見つからなかった場合、射程一杯まで線を引く設定にする
+		Vector3 defaultEnd = pPos;
+		defaultEnd.x += dir * player_->GetMaxAttackRange();
+		player_->SetLineEnd(defaultEnd);
 	}
 }
 
@@ -414,21 +410,30 @@ void GameScene::UpdateEnemies() {
 	for (Enemy* enemy : enemies_) {
 		if (enemy) {
 			if (!enemy->GetIsHit()) {
-			enemy->Update();
+				enemy->Update();
 			} else {
 				enemy->HitMove();
 			}
 			if (enemy->GetTimer() <= 0) {
-				enemy->OnCollisionPlayer(player_);
+				enemy->OnCollisionPlayer(player_.get());
 			}
 		}
 	}
-	// 死亡した敵をリストから削除してメモリ解放
 	enemies_.remove_if([](Enemy* enemy) {
 		if (enemy->IsDead()) {
 			delete enemy;
 			return true;
 		}
-		return false; // 返り値がない場合C4715が発生するため、falseを返す
+		return false;
 	});
+	// 死亡した敵をリストから削除してメモリ解放
+	for (auto it = enemies_.begin(); it != enemies_.end();) {
+		Enemy* enemy = *it;
+		if (enemy && enemy->IsDead()) {
+			delete enemy;
+			it = enemies_.erase(it);
+		} else {
+			++it;
+		}
+	}
 }

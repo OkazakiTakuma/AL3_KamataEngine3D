@@ -45,7 +45,7 @@ public:
 	static inline const float kBlockWidth = 1.0f;
 	static inline const float kBlockHeight = 1.0f;
 	// ブロックの個数
-	static inline const uint32_t kNumBlockVertical = 20;
+	static inline const uint32_t kNumBlockVertical = 50;
 	static inline const uint32_t kNumBlockHorizontal = 100;
 
 	// mapChipData_ への public アクセス用 getter を追加

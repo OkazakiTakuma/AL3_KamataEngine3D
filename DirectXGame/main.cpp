@@ -10,7 +10,9 @@ GameScene* gameScene = nullptr;
 enum Scene {
 	kNull,
 	kTitle,
+	kSelect,
 	kGame,
+	kCrear,
 };
 Scene scene = Scene::kNull;
 void ChangeScene();
@@ -19,7 +21,7 @@ void DrawScene();
     // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	ImGuiManager* imguiMneger = ImGuiManager::GetInstance();
-	Initialize(L"LD2B_01_オカザキ_タクマ_AL3");
+	Initialize(L"LE2C_09_オカザキ_タクマ_ジャンピング!!");
 	scene = Scene::kTitle;
 	titleScene = new TitleScene();
 	titleScene->Initialize();

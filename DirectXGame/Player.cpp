@@ -7,12 +7,16 @@
 
 using namespace KamataEngine;
 
-void Player::Initialize(const Vector3& position, Model* model) {
+void Player::Initialize(const Vector3& position, Model* model,Model* lopeModel) {
 	model_ = model;
+	lopeModel_ = lopeModel;
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = position;
 	worldTransform_.rotation_.y = -std::numbers::pi_v<float> / 4;
+	lopeWorldTransform_.Initialize();
 	worldTransform_.scale_ = {1.0f, 1.0f, 1.0f};
+	isAttack_ = false;
+	isAttackHit_ = false;
 }
 
 Player::~Player() {}
@@ -22,6 +26,7 @@ void Player::Update() {
 		behavior_ = behaviorRequest_;
 		switch (behavior_) {
 		case Behavior::kAttack:
+			lopeWorldTransform_.translation_ = worldTransform_.translation_;
 			BehaviorAttackInitialize();
 			break;
 		case Behavior::kRoot:
@@ -41,50 +46,40 @@ void Player::Update() {
 		BehaviorRootUpdate();
 		break;
 	}
+//#ifdef Debug
+	MapChipField::IndexSet playerIndex = mapChipField_->GetMapChipIndexByPosition(worldTransform_.translation_);
 	ImGui::Begin("Player Info");
 	ImGui::Text("Position: (%.2f, %.2f, %.2f)", worldTransform_.translation_.x, worldTransform_.translation_.y, worldTransform_.translation_.z);
 	ImGui::Text("Velocity: (%.2f, %.2f, %.2f)", velocity_.x, velocity_.y, velocity_.z);
 	ImGui::Text("On Ground: %s", onGround_ ? "True" : "False");
 	ImGui::Text("Is Ladder: %s", isLadder_ ? "True" : "False");
+	ImGui::Text("Is Ice Block: %s", isIceBlock_ ? "True" : "False");
+	ImGui::Text("Map Chip Index: (X: %d, Y: %d)", playerIndex.xIndex, playerIndex.yIndex);
 	ImGui::End();
+//#endif
+
+
 
 	WorldTransformUpdate(worldTransform_);
 }
 
-void Player::Draw(const Camera* camera) {
-	// 3Dモデルを描画
-	if (model_ && camera) {
+void Player::Draw(const Camera* camera) { // 3Dモデルを描画
+	if (model_) {
 		model_->Draw(worldTransform_, *camera);
 	}
 
-	// ヒットラインを Draw のタイミングで表示する
-	if (isDrawHitLine_) {
-		// プレイヤーのワールド座標（ワールド行列の 4 列目）
-
-		// PrimitiveDrawer で線を引く
-		if (auto drawer = PrimitiveDrawer::GetInstance()) {
-			drawer->DrawLine3d(worldTransform_.translation_, hitLineTarget_, hitLineColor_);
-		}
-
-		// タイマーを減らす。Draw はフレーム単位なのでフレームレート想定でデルタを減算
-		// フレームレートが可変の場合は本来 Update 側で delta を渡す方が良いが
-		// 要求どおり Draw タイミングで処理する（60FPS 想定）
-		constexpr float kFrameDelta = 1.0f / 60.0f;
-		hitLineTimer_ -= kFrameDelta;
-		if (hitLineTimer_ <= 0.0f) {
-			isDrawHitLine_ = false;
-			hitLineTimer_ = 0.0f;
-		}
+	// 攻撃演出（ライン表示）
+	if (behavior_ == Behavior::kAttack) {
+		PrimitiveDrawer::GetInstance()->SetCamera(camera);
+		PrimitiveDrawer::GetInstance()->DrawLine3d(lineStart_, currentLineEnd, {1.0f, 1.0f, 1.0f, 1.0f}); // 白色の線
 	}
 }
-
 void Player::BehaviorRootInitialize() {}
 
 void Player::BehaviorRootUpdate() {
 	if (Input::GetInstance()->TriggerKey(DIK_SPACE)) {
 		behaviorRequest_ = Behavior::kAttack;
 	}
-
 	KeyMove();
 
 	CollisionMapInfo collisionMapInfo{};
@@ -92,12 +87,12 @@ void Player::BehaviorRootUpdate() {
 
 	IsMapCollision(collisionMapInfo, worldTransform_, mapChipField_);
 	isLadder_ = CheckIsLadder();
-	isIceBlock_ = collisionMapInfo.isIceBlockCollision;
+	isIceBlock_ = CheckIsIceBlock();
 	Move(collisionMapInfo);
 	CollisionCeiling(collisionMapInfo);
 	CollisionFloor(collisionMapInfo);
-	ChengeOnGround(collisionMapInfo);
 	CollisionWall(collisionMapInfo);
+	ChengeOnGround(collisionMapInfo);
 	isClackBlock_ = collisionMapInfo.isCrackBlockCollision;
 	isGoal = collisionMapInfo.isGoalCollision;
 
@@ -117,23 +112,43 @@ void Player::BehaviorRootUpdate() {
 	}
 }
 
+// 攻撃開始（初期化）
 void Player::BehaviorAttackInitialize() {
-	isAttack_ = true;
+	attackEaseTimer_ = 0.0f;
 	isAttackHit_ = false;
+	hitEnemy_ = nullptr;
+	lineStart_ = worldTransform_.translation_;
+	lineStart_.y += 1.0f; // 少し上から出す
+
+	// 1. 方向の決定（現在の向きに基づいて終点を計算）
+	float directionSign = (lastDirection_ == LRDirection::kRight) ? 1.0f : -1.0f;
+	lineEnd_ = lineStart_;
+	lineEnd_.y += 1.0f; // 少し上から出す
+	lineEnd_.x += directionSign * maxAttackRange;
+
+	// 2. 判定（GameScene側で判定しても良いですが、ここではロジックとして記載）
+	// ※ 実際には GameScene::CheckALLCollision 等からこのリストを取得する形になります
 }
 
 void Player::BehaviorAttackUpdate() {
-	if (isAttackHit_) {
-		AttackHitUpdate();
-		isAttackHit_ = false;
+	// 演出タイマー進行
+	attackEaseTimer_ += 1.0f / 60.0f;
+	float t = std::min<float>(attackEaseTimer_ / kAttackEaseDuration, 1.0f);
 
-		return;
+	// イージング（線形補間でも可。ここでは Lerp を想定）
+	// 現在の線の先端座標
+	currentLineEnd = {lineStart_.x + (lineEnd_.x - lineStart_.x) * t, lineStart_.y + (lineEnd_.y - lineStart_.y) * t, lineStart_.z + (lineEnd_.z - lineStart_.z) * t};
+
+
+	// 終了判定
+	if (t >= 1.0f) {
+		if (hitEnemy_) {
+			hitEnemy_->SetIsHit(true); // 敵を消すフラグ（Enemy側で処理）
+		}
+		// 攻撃終了、Root状態へ戻る
+		behaviorRequest_ = Behavior::kRoot;
 	}
-	isAttackHit_ = false;
-
-	behaviorRequest_ = Behavior::kRoot;
 }
-
 // Player.cpp 内の AttackHitUpdate を次のように置き換えてください。
 void Player::AttackHitUpdate() {
 	// プレイヤーのワールド位置は Draw 時に取得して描画するため、
@@ -169,7 +184,6 @@ Vector3 Player::GetWorldPosition() {
 AABB Player::GetAABB() {
 	AABB aabb;
 	Vector3 worldPosition = GetWorldPosition();
-	worldPosition.y *= 2.0f;
 	aabb.min = worldPosition - Vector3(kWidth / 2.0f, kHeight / 2.0f, kWidth / 2.0f);
 	aabb.max = worldPosition + Vector3(kWidth / 2.0f, kHeight / 2.0f, kWidth / 2.0f);
 	return aabb;
@@ -211,15 +225,16 @@ void Player::KeyMove() {
 	bool pressingLeft = in->PushKey(DIK_LEFT) || in->PushKey(DIK_A);
 	bool pressingRight = in->PushKey(DIK_RIGHT) || in->PushKey(DIK_D);
 	bool pressingUp = in->PushKey(DIK_UP) || in->PushKey(DIK_W);
+	bool triggerUp = in->TriggerKey(DIK_UP) || in->TriggerKey(DIK_W);
 	bool pressingDown = in->PushKey(DIK_DOWN) || in->PushKey(DIK_S);
 
 	// はしご移動処理（上下移動）
 	if (isLadder_ == true) {
 		if (pressingUp) {
-			velocity_.y = kClimbSpeed;
+			worldTransform_.translation_.y += kClimbSpeed;
 			onGround_ = true;
 		} else if (pressingDown) {
-			velocity_.y = -kClimbSpeed;
+			worldTransform_.translation_.y += -kClimbSpeed;
 			onGround_ = true;
 		} else {
 			if (!onGround_) {
@@ -262,22 +277,26 @@ void Player::KeyMove() {
 		}
 		acceleration_.x = 0.0f;
 	}
+	if (!isLadder_) {
+		if (onGround_) {
 
-	if (onGround_) {
-		isSkyJump_ = true;
-		if (in->TriggerKey(DIK_UP) || in->TriggerKey(DIK_W)) {
-			velocity_.y = kJumpPower;
-			onGround_ = false;
-		}
-	} else {
-		if (isSkyJump_) {
-			if (in->TriggerKey(DIK_UP) || in->TriggerKey(DIK_W)) {
-				velocity_.y += kJumpPower;
-				isSkyJump_ = false;
+			isSkyJump_ = true;
+			if (triggerUp) {
+				velocity_.y = kJumpPower;
+				onGround_ = false;
 			}
+		} else {
+			if (isSkyJump_) {
+				if (triggerUp) {
+					velocity_.y = kJumpPower;
+					isSkyJump_ = false;
+				}
+			}
+			if (!isLadder_) {
+				velocity_.y -= kGravityAccleration;
+			}
+			velocity_.y = std::clamp(velocity_.y, -kMaxFallSpeed, kMaxFallSpeed);
 		}
-		velocity_.y -= kGravityAccleration;
-		velocity_.y = std::clamp(velocity_.y, -kMaxFallSpeed, kMaxFallSpeed);
 	}
 }
 
@@ -289,16 +308,19 @@ void Player::ChengeOnGround(CollisionMapInfo& info) {
 		}
 		bool hit = false;
 		Vector3 leftBottomPosition = CornerPosition(worldTransform_.translation_, Corner::kLeftBottom);
+		leftBottomPosition.y -= 0.2f;
+
 		Vector3 rightBottomPosition = CornerPosition(worldTransform_.translation_, Corner::kRightBottom);
+		rightBottomPosition.y -= 0.2f;
 		MapChipField::IndexSet indexSet = mapChipField_->GetMapChipIndexByPosition(leftBottomPosition);
 		MapChipType mapChipType = mapChipField_->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
-		if (mapChipType == MapChipType::kBlock) {
+		if (mapChipType == MapChipType::kBlock || mapChipType == MapChipType::kCrackBlock || mapChipType == MapChipType::kIceBlocK || mapChipType == MapChipType::kLadder) {
 			hit = true;
 		}
 
 		indexSet = mapChipField_->GetMapChipIndexByPosition(rightBottomPosition);
 		mapChipType = mapChipField_->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
-		if (mapChipType == MapChipType::kBlock) {
+		if (mapChipType == MapChipType::kBlock || mapChipType == MapChipType::kCrackBlock || mapChipType == MapChipType::kIceBlocK || mapChipType == MapChipType::kLadder) {
 			hit = true;
 		}
 
@@ -317,9 +339,60 @@ void Player::ChengeOnGround(CollisionMapInfo& info) {
 
 bool Player::CheckIsLadder() {
 	// プレイヤーの中心がはしごに触れているか判定する
-	MapChipField::IndexSet indexSet = mapChipField_->GetMapChipIndexByPosition(worldTransform_.translation_);
+	WorldTransform updatedWorldTransform;
+	updatedWorldTransform.Initialize();
+	// 代入演算子がdeleteされているため、メンバごとにコピーする
+	updatedWorldTransform.scale_ = worldTransform_.scale_;
+	updatedWorldTransform.rotation_ = worldTransform_.rotation_;
+	updatedWorldTransform.translation_ = worldTransform_.translation_;
+	updatedWorldTransform.translation_.y += kClimbSpeed;
+	updatedWorldTransform.matWorld_ = worldTransform_.matWorld_;
+	updatedWorldTransform.parent_ = worldTransform_.parent_;
+	MapChipField::IndexSet indexSet = mapChipField_->GetMapChipIndexByPosition(updatedWorldTransform.translation_);
 	MapChipType mapChipType = mapChipField_->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
+	if (mapChipType != MapChipType::kLadder) {
+		return false;
+	}
+	indexSet = mapChipField_->GetMapChipIndexByPosition(worldTransform_.translation_);
+
+	 mapChipType = mapChipField_->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
 	if (mapChipType == MapChipType::kLadder) {
+		return true;
+	}
+	Vector3 leftBottomPosition = CornerPosition(worldTransform_.translation_, Corner::kLeftBottom);
+	leftBottomPosition.y -= 0.2f;
+
+	Vector3 rightBottomPosition = CornerPosition(worldTransform_.translation_, Corner::kRightBottom);
+	rightBottomPosition.y -= 0.2f;
+	indexSet = mapChipField_->GetMapChipIndexByPosition(leftBottomPosition);
+	mapChipType = mapChipField_->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
+	if (mapChipType == MapChipType::kLadder) {
+		return true;
+	}
+
+	indexSet = mapChipField_->GetMapChipIndexByPosition(rightBottomPosition);
+	mapChipType = mapChipField_->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
+	if (mapChipType == MapChipType::kLadder) {
+		return true;
+	}
+	return false;
+}
+
+bool Player::CheckIsIceBlock() {
+	Vector3 leftBottomPosition = CornerPosition(worldTransform_.translation_, Corner::kLeftBottom);
+	leftBottomPosition.y -= 0.2f;
+
+	Vector3 rightBottomPosition = CornerPosition(worldTransform_.translation_, Corner::kRightBottom);
+	rightBottomPosition.y -= 0.2f;
+	MapChipField::IndexSet  indexSet = mapChipField_->GetMapChipIndexByPosition(leftBottomPosition);
+	MapChipType mapChipType = mapChipField_->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
+	if (mapChipType == MapChipType::kIceBlocK) {
+		return true;
+	}
+
+	indexSet = mapChipField_->GetMapChipIndexByPosition(rightBottomPosition);
+	mapChipType = mapChipField_->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
+	if (mapChipType == MapChipType::kIceBlocK) {
 		return true;
 	}
 	return false;
@@ -387,11 +460,12 @@ void IsBottomCollision(CollisionMapInfo& info, const WorldTransform& worldTransf
 		positionsNew[i] = CornerPosition(Add(worldTransform_.translation_, info.movement), static_cast<Corner>(i));
 	}
 
-	if (info.movement.y >= 0.0f)
+	if (info.movement.y >= 0.0f) {
 		return;
+	}
 
 	bool hit = false;
-	MapChipField::IndexSet indexSet = mapChipField->GetMapChipIndexByPosition(positionsNew[kLeftBottom]);
+	MapChipField::IndexSet indexSet = mapChipField->GetMapChipIndexByPosition({positionsNew[kLeftBottom].x - 0.1f, positionsNew[kLeftBottom].y - 0.1f, positionsNew[kLeftBottom].z - 0.1f});
 	MapChipType mapChipType = mapChipField->GetMapChipTypeIndex(indexSet.xIndex, indexSet.yIndex);
 	if (mapChipType == MapChipType::kBlock) {
 		hit = true;

@@ -18,6 +18,7 @@ public:
 	void HitMove();
 	bool GetIsHit() { return isHit; }
 	void SetIsHit(bool hit) { isHit = hit; }
+	void SetVelocity(const KamataEngine::Vector3& velocity) { velocity_ = velocity; }
 	int GetTimer() { return deathTimer; }
 
 private:
