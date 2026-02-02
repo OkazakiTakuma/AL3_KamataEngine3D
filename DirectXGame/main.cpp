@@ -10,7 +10,9 @@ GameScene* gameScene = nullptr;
 enum Scene {
 	kNull,
 	kTitle,
+	kSelect,
 	kGame,
+	kCrear,
 };
 Scene scene = Scene::kNull;
 void ChangeScene();

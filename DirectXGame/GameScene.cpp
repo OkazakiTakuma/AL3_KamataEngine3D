@@ -16,6 +16,7 @@ void GameScene::Initialize() {
 	blockModel_ = std::unique_ptr<Model>(Model::CreateFromOBJ("floor", true));
 	ladderModel_ = std::unique_ptr<Model>(Model::CreateFromOBJ("ladder", true));
 	goalModel_ = std::unique_ptr<Model>(Model::CreateFromOBJ("goal", true));
+	ropeModel_ = std::unique_ptr<Model>(Model::CreateFromOBJ("rope", true));
 
 	worldTransform_.Initialize();
 
@@ -45,7 +46,7 @@ void GameScene::Initialize() {
 
 	playerModel_ = std::unique_ptr<Model>(Model::CreateFromOBJ("player", true));
 	player_ = std::make_unique<Player>();
-	player_->Initialize(playerPosition_, playerModel_.get());
+	player_->Initialize(playerPosition_, playerModel_.get(), ropeModel_.get());
 	player_->SetMapChipField(mapChipField_);
 
 	// 敵の生成（同じモデルを共有）
@@ -109,7 +110,7 @@ void GameScene::Update() {
 		break;
 
 	case Phase::kPlay:
-	
+
 		skydome_->Update();
 		cameraController_->Update();
 		UpdateBlocksTransforms();
@@ -220,12 +221,6 @@ void GameScene::Draw() {
 			}
 		}
 	}
-
-	// プレイヤー描画（生きているときのみ）
-	if (player_ && !player_->IsDead()) {
-		player_->Draw(&cameraController_->GetCamera());
-	}
-
 	// 敵描画
 	for (Enemy* enemy : enemies_) {
 		if (enemy && !enemy->IsDead()) {
@@ -233,6 +228,11 @@ void GameScene::Draw() {
 			enemy->Draw(&cameraController_->GetCamera());
 		}
 	}
+	// プレイヤー描画（生きているときのみ）
+ 	if (player_ && !player_->IsDead()) {
+		player_->Draw(&cameraController_->GetCamera());
+	}
+
 
 
 	// 死亡時パーティクル
@@ -349,48 +349,50 @@ void GameScene::CheckALLCollision() {
 			enemy->OnCollisionPlayer(player_.get());
 		}
 	}
+	
 
 	// 攻撃範囲判定（プレイヤーが攻撃状態のとき）
- 	if (player_->GetIsAttack()) {
-		const int maxRange = static_cast<int>(player_->GetMaxAttackRange());
-		Vector3 playerPos = player_->GetWorldPosition();
+	// 攻撃状態で、かつ演出が始まったばかり(0)の時だけ敵を検索する
+	if (player_->GetBehavior() != Behavior::kAttack) {
+		return;
+	}
 
-		bool hitAny = false;
-		for (int r = 0; r < maxRange; ++r) {
-			AABB attackRange;
-			float rf = static_cast<float>(r);
-			if (player_->GetLRDirection() == LRDirection::kLeft) {
-				// 左向き
+	Vector3 pPos = player_->GetWorldPosition();
+	// プレイヤーの向きを取得 (lastDirection_ などを使用)
+	float dir = (player_->GetLRDirection() == LRDirection::kRight) ? 1.0f : -1.0f;
 
-				attackRange.min = playerPos - Vector3(rf, 0, kWidth / 2.0f);
-				attackRange.max = playerPos + Vector3(0, rf, kWidth / 2.0f);
-			} else {
-				// 右向き
-				attackRange.min = playerPos + Vector3(0, 0, -kWidth / 2.0f);
-				attackRange.max = playerPos + Vector3(rf, rf, kWidth / 2.0f);
-			}
+	Enemy* closestEnemy = nullptr;
+	float minDistance = player_->GetMaxAttackRange();
 
-			for (Enemy* enemy : enemies_) {
-				if (!enemy)
-					continue;
-				if (IsCollisionAABBToAABB(attackRange, enemy->GetAABB())) {
-					// ヒットした敵をターゲットに設定し、Player 側でヒット処理（ライン表示）を行う
-					player_->SetTargetWorldPosition(enemy->GetWorldPosition());
-					player_->SetIsAttackHit(true);
-					enemy->SetIsHit(true);
-					player_->SetIsAttack(false); // 攻撃フラグ解除
-					hitAny = true;
-					break;
-				}
+	for (Enemy* enemy : enemies_) {
+		if (enemy->IsDead())
+			continue;
+
+		Vector3 ePos = enemy->GetWorldPosition();
+
+		// 1. プレイヤーの向いている方向に敵がいるか
+		float diffX = (ePos.x - pPos.x) * dir;
+
+		// 2. 射程圏内かつ、最も近い敵を探す
+		if (diffX > 0 && diffX <= minDistance) {
+			// Y軸（高さ）が概ね合っているか
+			if (std::abs(ePos.y - pPos.y) < 1.0f) {
+				minDistance = diffX;
+				closestEnemy = enemy;
 			}
-			// 1体でもヒットしたらループを抜ける
-			if (hitAny) {
-				break;
-			}
-			// 攻撃がヒットしなかった場合、攻撃フラグを解除
-			player_->SetIsAttackHit(false);
-			player_->SetIsAttack(false); // 攻撃フラグ解除
 		}
+	}
+
+	if (closestEnemy) {
+		// 敵が見つかった場合
+		player_->SetHitEnemy(closestEnemy);
+		player_->SetLineEnd(closestEnemy->GetWorldPosition());
+		closestEnemy->SetVelocity({0, 0, 0}); // 敵を停止させる
+	} else {
+		// 敵が見つからなかった場合、射程一杯まで線を引く設定にする
+		Vector3 defaultEnd = pPos;
+		defaultEnd.x += dir * player_->GetMaxAttackRange();
+		player_->SetLineEnd(defaultEnd);
 	}
 }
 
@@ -434,5 +436,4 @@ void GameScene::UpdateEnemies() {
 			++it;
 		}
 	}
-	
 }

@@ -50,6 +50,7 @@ private:
 	std::unique_ptr<KamataEngine::Model> blockModel_ = nullptr;
 	std::unique_ptr<KamataEngine::Model> ladderModel_ = nullptr;
 	std::unique_ptr<KamataEngine::Model> goalModel_ = nullptr;
+	std::unique_ptr<KamataEngine::Model> ropeModel_ = nullptr;
 
 	// ワールドトランスフォーム
 	KamataEngine::WorldTransform worldTransform_;

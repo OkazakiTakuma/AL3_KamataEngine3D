@@ -49,7 +49,7 @@ public:
 	/// </summary>
 	/// <param name="model">モデル</param>
 	/// <param name="textureHandle">テクスチャーハンドル</param>
-	void Initialize(const KamataEngine::Vector3& position, KamataEngine::Model* model);
+	void Initialize(const KamataEngine::Vector3& position, KamataEngine::Model* model,KamataEngine::Model* lopeModel);
 	/// <summary>
 	/// デストラクタ
 	/// </summary>
@@ -123,14 +123,22 @@ public:
 	void SetIsClackBlock(bool isClackBlock) { isClackBlock_ = isClackBlock; }
 
 	bool IsDead() const { return isDead_; }
+	Behavior GetBehavior() const { return behavior_; }
+	int GetAttackTimer() const { return hitTimer; }
+	void SetHitEnemy(Enemy* enemy) { hitEnemy_ = enemy; }
+	void SetLineEnd(const KamataEngine::Vector3& lineEnd) { lineEnd_ = lineEnd; }
+	float GetAttackEaseTimer() const { return attackEaseTimer_; }
+
 
 	LRDirection GetLRDirection() const { return lrDirection_; }
 
 private:
 	// ワールド変換データ
 	KamataEngine::WorldTransform worldTransform_;
+	KamataEngine::WorldTransform lopeWorldTransform_;
 	// モデル
 	KamataEngine::Model* model_ = nullptr;
+	KamataEngine::Model* lopeModel_ = nullptr;
 	// テクスチャハンドル
 	uint32_t textstureHandle_ = 0u;
 	// カメラ
@@ -200,8 +208,17 @@ private:
 	KamataEngine::Vector3 hitLineTarget_;                           // ヒット先ワールド座標
 	KamataEngine::Vector4 hitLineColor_ = {1.0f, 0.0f, 0.0f, 1.0f}; // 赤
 	bool isGoal;
+	float attackEaseTimer_ = 0.0f;
+	const float kAttackEaseDuration = 0.3f; // 線が伸びる時間
+	KamataEngine::Vector3 lineStart_{};
+	KamataEngine::Vector3 lineEnd_{};
+	LRDirection lastDirection_ = LRDirection::kRight; // 向いている方向の保持用
+
+	// 攻撃対象の敵（演出終了まで保持）
+	Enemy* hitEnemy_ = nullptr;
 	bool CheckIsLadder();
 	bool CheckIsIceBlock();
+	KamataEngine::Vector3 currentLineEnd;
 
 };
 void IsMapCollision(CollisionMapInfo& info, const KamataEngine::WorldTransform& worldTransform, MapChipField* mapChipField);
